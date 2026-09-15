@@ -4,12 +4,10 @@ import 'leaflet/dist/leaflet.css';
 import { Crosshair, Layers, MapPin, Radio, Navigation, X } from 'lucide-react';
 
 /**
- * Interactive Leaflet Map Component
- * - 100% FREE Tiles (NO API KEY REQUIRED, NO WATERMARK)
- * - Dark Mode: Esri World Dark Gray Canvas (Base + Labels)
- * - Light/Street Mode: OpenStreetMap Humanitarian (HOT)
- * - Ultra-responsive layout for Mobile & Desktop
- * - Explicit User-Gesture GPS Permission Banner
+ * OnTrack Map Component
+ * - 100% Free Esri World Dark Gray Canvas (No API Key, No Watermarks)
+ * - Clean athletic route polyline without excessive neon glow
+ * - Minimalist matte pin markers
  */
 export default function MapRoute({
   mode = 'builder',
@@ -34,11 +32,9 @@ export default function MapRoute({
   const [showLocationPrompt, setShowLocationPrompt] = useState(true);
   const [locationNotice, setLocationNotice] = useState('');
   
-  // Layer refs for multi-layer tiles
   const baseTileRef = useRef(null);
   const labelTileRef = useRef(null);
 
-  // Keep latest callbacks and mode in refs
   const onAddWaypointRef = useRef(onAddWaypoint);
   const modeRef = useRef(mode);
 
@@ -50,48 +46,45 @@ export default function MapRoute({
     modeRef.current = mode;
   }, [mode]);
 
-  // Helper to attach tile layers (NO API KEY REQUIRED)
+  // Attach Tile Layers (Esri Dark Gray & OSM HOT - Keyless & Watermark-Free)
   const setTiles = (map, tileType) => {
     if (baseTileRef.current) map.removeLayer(baseTileRef.current);
     if (labelTileRef.current) map.removeLayer(labelTileRef.current);
 
     if (tileType === 'dark') {
-      // Esri World Dark Gray Base (Clean, high-speed, NO API KEY, NO WATERMARK)
       baseTileRef.current = L.tileLayer(
         'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
         {
           maxZoom: 19,
-          attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors',
+          attribution: '&copy; Esri, OpenStreetMap contributors',
         }
       ).addTo(map);
 
-      // Esri World Dark Gray Reference (Clean labels & street names)
       labelTileRef.current = L.tileLayer(
         'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
         {
           maxZoom: 19,
-          opacity: 0.85,
+          opacity: 0.8,
         }
       ).addTo(map);
     } else {
-      // OpenStreetMap HOT (Clean street map, NO API KEY)
       baseTileRef.current = L.tileLayer(
         'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
         {
           maxZoom: 19,
-          attribution: '&copy; OpenStreetMap contributors, Humanitarian map style',
+          attribution: '&copy; OpenStreetMap contributors',
         }
       ).addTo(map);
       labelTileRef.current = null;
     }
   };
 
-  // Initialize Leaflet Map
+  // Initialize Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
-    if (mapInstanceRef.current) return; // StrictMode safeguard
+    if (mapInstanceRef.current) return;
 
-    const initialCenter = [-6.175392, 106.827153]; // Jakarta Monas
+    const initialCenter = [-6.175392, 106.827153];
     const initialZoom = 15;
 
     const map = L.map(mapContainerRef.current, {
@@ -103,17 +96,14 @@ export default function MapRoute({
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Initial tile layers (NO API KEY)
     setTiles(map, 'dark');
 
-    // Feature Layers
     markersLayerRef.current = L.layerGroup().addTo(map);
     routeLayerRef.current = L.layerGroup().addTo(map);
     liveRouteLayerRef.current = L.layerGroup().addTo(map);
     liveMarkerLayerRef.current = L.layerGroup().addTo(map);
     userLocLayerRef.current = L.layerGroup().addTo(map);
 
-    // Map click event
     map.on('click', (e) => {
       if (modeRef.current === 'builder') {
         const { lat, lng } = e.latlng;
@@ -123,7 +113,6 @@ export default function MapRoute({
       }
     });
 
-    // Detect user manual dragging
     map.on('dragstart', () => {
       if (modeRef.current === 'freerun') {
         setAutoFollow(false);
@@ -132,7 +121,6 @@ export default function MapRoute({
 
     mapInstanceRef.current = map;
 
-    // Force Leaflet to recalculate container dimensions immediately
     const t1 = setTimeout(() => map.invalidateSize(), 50);
     const t2 = setTimeout(() => map.invalidateSize(), 300);
     const t3 = setTimeout(() => map.invalidateSize(), 800);
@@ -189,26 +177,25 @@ export default function MapRoute({
       const icon = L.divIcon({
         className: 'custom-pin-wrapper',
         html: `
-          <div class="custom-pin-marker ${markerClass} w-7 h-7 shadow-lg flex items-center justify-center font-bold text-xs cursor-pointer select-none">
+          <div class="custom-pin-marker ${markerClass} w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center font-bold text-xs select-none">
             ${label}
           </div>
         `,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
       });
 
       const marker = L.marker([pt.lat, pt.lng], { icon });
       marker.bindPopup(
-        `<div class="text-xs text-slate-800 font-sans py-1">
-          <b>${isStart ? 'Titik Awal (Start)' : isEnd ? 'Titik Akhir (Finish)' : `Waypoint #${index + 1}`}</b><br/>
-          Lat: ${pt.lat.toFixed(5)}, Lng: ${pt.lng.toFixed(5)}
+        `<div class="text-xs text-zinc-900 font-sans py-0.5">
+          <b>${isStart ? 'Titik Awal (Start)' : isEnd ? 'Titik Akhir (Finish)' : `Waypoint #${index + 1}`}</b>
         </div>`
       );
       markersLayerRef.current.addLayer(marker);
     });
   }, [waypoints, mode]);
 
-  // Route Builder: Update OSRM Route GeoJSON
+  // Route Builder: Render clean solid route polyline
   useEffect(() => {
     if (!routeLayerRef.current) return;
     routeLayerRef.current.clearLayers();
@@ -216,19 +203,10 @@ export default function MapRoute({
     if (mode !== 'builder') return;
 
     if (routeGeojson && routeGeojson.coordinates && routeGeojson.coordinates.length > 0) {
-      const glowLayer = L.geoJSON(routeGeojson, {
-        style: {
-          color: '#10b981',
-          weight: 8,
-          opacity: 0.35,
-          lineCap: 'round',
-          lineJoin: 'round',
-        },
-      });
-
+      // Clean, crisp solid line without neon glare
       const mainLayer = L.geoJSON(routeGeojson, {
         style: {
-          color: '#34d399',
+          color: '#10b981',
           weight: 4.5,
           opacity: 0.95,
           lineCap: 'round',
@@ -236,11 +214,10 @@ export default function MapRoute({
         },
       });
 
-      routeLayerRef.current.addLayer(glowLayer);
       routeLayerRef.current.addLayer(mainLayer);
 
       if (mapInstanceRef.current && waypoints.length >= 2) {
-        const bounds = glowLayer.getBounds();
+        const bounds = mainLayer.getBounds();
         if (bounds.isValid()) {
           mapInstanceRef.current.fitBounds(bounds, {
             padding: [40, 40],
@@ -252,7 +229,7 @@ export default function MapRoute({
     }
   }, [routeGeojson, waypoints.length, mode]);
 
-  // Free Run: Update Live GPS Tracking Polyline & Live User Marker
+  // Free Run: Render clean live GPS polyline
   useEffect(() => {
     if (!liveRouteLayerRef.current || !liveMarkerLayerRef.current) return;
     liveRouteLayerRef.current.clearLayers();
@@ -268,39 +245,28 @@ export default function MapRoute({
       const startIcon = L.divIcon({
         className: 'custom-pin-wrapper',
         html: `
-          <div class="custom-pin-marker marker-start w-7 h-7 shadow-lg flex items-center justify-center font-bold text-xs cursor-pointer select-none">
+          <div class="custom-pin-marker marker-start w-6 h-6 flex items-center justify-center font-bold text-xs">
             S
           </div>
         `,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
       });
-      const startMarker = L.marker(startCoord, { icon: startIcon });
-      liveMarkerLayerRef.current.addLayer(startMarker);
+      liveMarkerLayerRef.current.addLayer(L.marker(startCoord, { icon: startIcon }));
 
-      // Live polyline
+      // Clean, crisp GPS track line
       if (latLngs.length >= 2) {
-        const glowPolyline = L.polyline(latLngs, {
-          color: '#06b6d4',
-          weight: 9,
-          opacity: 0.35,
-          lineCap: 'round',
-          lineJoin: 'round',
-        });
-
-        const sharpPolyline = L.polyline(latLngs, {
-          color: '#38bdf8',
+        const line = L.polyline(latLngs, {
+          color: '#f97316',
           weight: 4.5,
           opacity: 0.95,
           lineCap: 'round',
           lineJoin: 'round',
         });
-
-        liveRouteLayerRef.current.addLayer(glowPolyline);
-        liveRouteLayerRef.current.addLayer(sharpPolyline);
+        liveRouteLayerRef.current.addLayer(line);
       }
 
-      // Latest User Position Marker (Pulsing Dot)
+      // Latest User Position Marker (Clean dot)
       const latestCoord = latLngs[latLngs.length - 1];
       const liveUserIcon = L.divIcon({
         className: 'custom-live-icon',
@@ -310,8 +276,8 @@ export default function MapRoute({
             <div class="marker-live-dot"></div>
           </div>
         `,
-        iconSize: [38, 38],
-        iconAnchor: [19, 19],
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
       });
 
       const userMarker = L.marker(latestCoord, { icon: liveUserIcon, zIndexOffset: 1000 });
@@ -323,7 +289,7 @@ export default function MapRoute({
     }
   }, [liveCoordinates, mode, autoFollow]);
 
-  // Request Geolocation on user explicit click
+  // Request Geolocation
   const handleRequestLocation = () => {
     if (!navigator.geolocation) {
       alert('Geolokasi tidak didukung oleh browser ini.');
@@ -332,7 +298,7 @@ export default function MapRoute({
     }
 
     setIsLocating(true);
-    setLocationNotice('Meminta izin GPS...');
+    setLocationNotice('Mencari posisi...');
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -357,11 +323,11 @@ export default function MapRoute({
                   <div class="marker-live-dot"></div>
                 </div>
               `,
-              iconSize: [38, 38],
-              iconAnchor: [19, 19],
+              iconSize: [32, 32],
+              iconAnchor: [16, 16],
             });
             const marker = L.marker([userLat, userLng], { icon: userIcon });
-            marker.bindPopup('<b>Lokasi Anda Saat Ini</b>');
+            marker.bindPopup('<b>Lokasi Anda</b>');
             userLocLayerRef.current.addLayer(marker);
           }
         }
@@ -369,13 +335,10 @@ export default function MapRoute({
       (err) => {
         setIsLocating(false);
         console.warn('Geolocation error:', err.message);
-
         if (err.code === 1) {
-          setLocationNotice(
-            'Izin lokasi diblokir di browser. Ubah izin Lokasi di setelan URL browser.'
-          );
+          setLocationNotice('Izin lokasi diblokir. Aktifkan izin lokasi di URL browser.');
         } else {
-          setLocationNotice('GPS HP tidak merespons. Pastikan GPS aktif.');
+          setLocationNotice('GPS tidak merespons. Pastikan GPS HP aktif.');
         }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -383,27 +346,26 @@ export default function MapRoute({
   };
 
   return (
-    <div className="relative w-full h-[400px] sm:h-[480px] lg:h-[540px] rounded-xl sm:rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl bg-[#090e17]">
-      {/* Container Leaflet dengan height eksplisit 100% */}
+    <div className="relative w-full h-[400px] sm:h-[480px] lg:h-[540px] rounded-xl sm:rounded-2xl overflow-hidden border border-zinc-800 bg-[#090e17]">
       <div
         ref={mapContainerRef}
         className="w-full h-full"
         style={{ width: '100%', height: '100%' }}
       />
 
-      {/* GPS PERMISSION PROMPT BANNER (Responsive for Mobile) */}
+      {/* GPS PERMISSION PROMPT BANNER */}
       {showLocationPrompt && (
-        <div className="absolute bottom-12 left-2 right-2 sm:left-auto sm:right-auto sm:left-1/2 sm:-translate-x-1/2 z-[1000] max-w-sm w-auto bg-slate-900/95 backdrop-blur-xl border border-sky-500/50 rounded-xl p-2.5 sm:p-3 shadow-2xl flex items-center justify-between gap-2 text-left animate-fadeIn">
+        <div className="absolute bottom-12 left-2 right-2 sm:left-auto sm:right-auto sm:left-1/2 sm:-translate-x-1/2 z-[1000] max-w-sm w-auto bg-zinc-900/95 backdrop-blur-md border border-zinc-700 rounded-xl p-2.5 sm:p-3 shadow-xl flex items-center justify-between gap-2 text-left animate-fadeIn">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400 shrink-0">
-              <Navigation className="w-3.5 h-3.5 animate-pulse" />
+            <div className="w-7 h-7 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-300 shrink-0">
+              <Navigation className="w-3.5 h-3.5" />
             </div>
             <div className="min-w-0">
-              <h4 className="text-xs font-bold text-white leading-tight">
-                Fokus ke Lokasi Saya?
+              <h4 className="text-xs font-semibold text-white leading-tight">
+                Fokuskan ke Lokasi Saya?
               </h4>
-              <p className="text-[10px] text-slate-300 leading-tight truncate">
-                {locationNotice || 'Klik untuk menyalakan GPS'}
+              <p className="text-[10px] text-zinc-400 leading-tight truncate">
+                {locationNotice || 'Nyalakan GPS untuk memusatkan peta'}
               </p>
             </div>
           </div>
@@ -412,14 +374,14 @@ export default function MapRoute({
               type="button"
               onClick={handleRequestLocation}
               disabled={isLocating}
-              className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-sky-500 to-cyan-500 text-slate-950 text-xs font-bold shadow transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              className="px-2.5 py-1 rounded-lg bg-white text-zinc-950 text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
             >
               {isLocating ? '...' : 'Izinkan'}
             </button>
             <button
               type="button"
               onClick={() => setShowLocationPrompt(false)}
-              className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-all cursor-pointer"
+              className="p-1 text-zinc-400 hover:text-white rounded hover:bg-zinc-800 transition-all cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -427,30 +389,30 @@ export default function MapRoute({
         </div>
       )}
 
-      {/* Route Loading Overlay in Builder mode */}
+      {/* Route Loading Indicator */}
       {mode === 'builder' && isLoadingRoute && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-3 py-1.5 bg-slate-900/90 backdrop-blur-md border border-emerald-500/40 rounded-full shadow-xl flex items-center gap-2 text-[11px] font-medium text-emerald-300">
-          <div className="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-          <span>Menghubungkan jalan (OSRM)...</span>
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-3 py-1.5 bg-zinc-900/95 border border-zinc-700 rounded-full shadow-lg flex items-center gap-2 text-[11px] font-medium text-zinc-200">
+          <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+          <span>Menyesuaikan rute...</span>
         </div>
       )}
 
-      {/* Guide Banner for Route Builder */}
+      {/* Empty Waypoint Guide */}
       {mode === 'builder' && waypoints.length === 0 && !showLocationPrompt && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] pointer-events-none px-3 py-1.5 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 rounded-xl shadow-lg flex items-center gap-1.5 text-[11px] font-medium text-slate-300">
-          <MapPin className="w-3.5 h-3.5 text-emerald-400 animate-bounce" />
-          <span>Klik peta untuk menandai rute lari</span>
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] pointer-events-none px-3 py-1.5 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-lg flex items-center gap-1.5 text-[11px] font-medium text-zinc-300">
+          <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+          <span>Klik peta untuk menandai rute</span>
         </div>
       )}
 
-      {/* Status Banner for Free Run Mode */}
+      {/* Free Run Banner */}
       {mode === 'freerun' && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] px-3 py-1.5 bg-slate-900/90 backdrop-blur-md border border-sky-500/40 rounded-xl shadow-lg flex items-center gap-2 text-[11px] font-semibold text-sky-300">
-          <Radio className={`w-3 h-3 ${isLiveTracking ? 'text-sky-400 animate-pulse' : 'text-slate-400'}`} />
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] px-3 py-1.5 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-lg flex items-center gap-2 text-[11px] font-medium text-zinc-200">
+          <Radio className={`w-3 h-3 ${isLiveTracking ? 'text-orange-400 animate-pulse' : 'text-zinc-500'}`} />
           <span>
             {isLiveTracking
-              ? `GPS Live (${liveCoordinates.length} pts)`
-              : 'Klik "Mulai" untuk lacak GPS'}
+              ? `GPS Live (${liveCoordinates.length} titik)`
+              : 'Klik "Mulai" untuk merekam GPS'}
           </span>
         </div>
       )}
@@ -461,34 +423,30 @@ export default function MapRoute({
           type="button"
           onClick={handleRequestLocation}
           title="Fokus ke lokasi saya"
-          className={`p-2 backdrop-blur-md rounded-xl border shadow-lg transition-all active:scale-95 flex items-center justify-center cursor-pointer ${
-            mode === 'freerun' && autoFollow
-              ? 'bg-sky-500/20 text-sky-300 border-sky-500/60'
-              : 'bg-slate-900/85 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border-slate-700/70'
-          }`}
+          className="p-2 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white backdrop-blur-md rounded-xl border border-zinc-700 shadow-md transition-all active:scale-95 flex items-center justify-center cursor-pointer"
         >
-          <Crosshair className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLocating ? 'animate-spin text-emerald-400' : ''}`} />
+          <Crosshair className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLocating ? 'animate-spin text-orange-400' : ''}`} />
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTile(activeTile === 'dark' ? 'osm' : 'dark')}
-          title={activeTile === 'dark' ? 'Ganti ke OpenStreetMap' : 'Ganti ke Dark Mode'}
-          className="p-2 bg-slate-900/85 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-lg transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+          title={activeTile === 'dark' ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'}
+          className="p-2 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white backdrop-blur-md rounded-xl border border-zinc-700 shadow-md transition-all active:scale-95 flex items-center justify-center cursor-pointer"
         >
           <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
       </div>
 
-      {/* Mode & Stats badge bottom-left */}
-      <div className="absolute bottom-2 left-2 z-[999] px-2.5 py-1 bg-slate-950/85 backdrop-blur-md rounded-lg border border-slate-800 text-[10px] font-mono text-slate-400 flex items-center gap-1.5">
+      {/* Mode & Status Badge Bottom-Left */}
+      <div className="absolute bottom-2 left-2 z-[999] px-2.5 py-1 bg-zinc-950/90 rounded-lg border border-zinc-800 text-[10px] text-zinc-400 flex items-center gap-1.5 font-sans">
         <span
           className={`w-1.5 h-1.5 rounded-full ${
             mode === 'freerun'
               ? isLiveTracking
-                ? 'bg-sky-400 animate-ping'
-                : 'bg-amber-400'
-              : 'bg-emerald-400 animate-pulse'
+                ? 'bg-orange-400 animate-ping'
+                : 'bg-zinc-500'
+              : 'bg-emerald-400'
           }`}
         />
         <span>

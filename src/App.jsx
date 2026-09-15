@@ -5,7 +5,6 @@ import MetricCards from './components/MetricCards';
 import ControlsBar from './components/ControlsBar';
 import ShareModal from './components/ShareModal';
 import { fetchWalkingRoute, haversineDistance } from './utils/osrm';
-import { Footprints, Radio } from 'lucide-react';
 
 export default function App() {
   // Tracking Mode: 'builder' (manual waypoint snapping) vs 'freerun' (live GPS tracking)
@@ -267,7 +266,7 @@ export default function App() {
       : routeGeojson?.coordinates || [];
 
   return (
-    <div className="min-h-screen bg-[#070b12] text-slate-100 flex flex-col selection:bg-emerald-500/30 selection:text-emerald-300">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col selection:bg-zinc-800 selection:text-white">
       {/* Top Navigation Bar with Mode Switcher & Wake Lock indicator */}
       <Navbar
         mode={mode}
@@ -317,33 +316,25 @@ export default function App() {
         />
 
         {/* Quick Instructions & Footnote */}
-        <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 px-2 py-1 gap-2">
+        <div className="flex flex-wrap items-center justify-between text-xs text-zinc-500 px-1 py-1 gap-2">
           <div className="flex items-center gap-2">
             {mode === 'builder' ? (
-              <>
-                <Footprints className="w-3.5 h-3.5 text-emerald-400" />
-                <span>
-                  <b>Mode Route Builder:</b> Klik peta untuk menandai titik rute &bull; OSRM otomatis menyambungkan jalur jalan.
-                </span>
-              </>
+              <span>
+                Klik peta untuk menentukan rute jalan &bull; Hitungan jarak otomatis terhubung
+              </span>
             ) : (
-              <>
-                <Radio className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
-                <span>
-                  <b>Mode Free Run:</b> Klik &quot;Mulai Track GPS&quot; &bull; Jarak dihitung via Haversine &bull; Layar HP otomatis dijaga tetap aktif (Wake Lock).
-                </span>
-              </>
+              <span>
+                Tekan &quot;Mulai&quot; untuk merekam rute GPS live &bull; Layar HP dijaga tetap aktif
+              </span>
             )}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-slate-500">
-            <span>100% Client-side</span>
-            <span>&bull;</span>
-            <span>No backend required</span>
+          <div className="flex items-center gap-1 text-[11px] text-zinc-600">
+            <span>OnTrack v1.0</span>
           </div>
         </div>
       </main>
 
-      {/* Strava-Style Share Card Modal */}
+      {/* OnTrack Share Card Modal */}
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
