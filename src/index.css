@@ -21,11 +21,18 @@
 
 /* Custom styles for Leaflet elements in dark mode */
 .leaflet-container {
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 460px !important;
   background: #090e17 !important;
   font-family: inherit;
   z-index: 10;
+  display: block;
+}
+
+.leaflet-tile {
+  /* Prevent inverted or invisible tiles */
+  filter: brightness(0.95) contrast(1.05);
 }
 
 /* Dark mode leaflet controls */

@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Crosshair, Layers, MapPin, Radio } from 'lucide-react';
+import { Crosshair, Layers, MapPin, Radio, Navigation, X } from 'lucide-react';
 
 /**
- * Interactive Leaflet Map Component supporting:
- * 1. "Route Builder Mode": manual click waypoints + OSRM route snapping
- * 2. "Free Run Mode": live GPS tracking polyline + live user position pulse marker
+ * Interactive Leaflet Map Component
+ * - 100% FREE Tiles (NO API KEY REQUIRED, NO WATERMARK)
+ * - Dark Mode: Esri World Dark Gray Canvas (Base + Labels)
+ * - Light/Street Mode: OpenStreetMap Humanitarian (HOT)
+ * - Ultra-responsive layout for Mobile & Desktop
+ * - Explicit User-Gesture GPS Permission Banner
  */
 export default function MapRoute({
-  mode = 'builder', // 'builder' | 'freerun'
+  mode = 'builder',
   waypoints = [],
   routeGeojson = null,
   liveCoordinates = [],
@@ -23,13 +26,19 @@ export default function MapRoute({
   const routeLayerRef = useRef(null);
   const liveRouteLayerRef = useRef(null);
   const liveMarkerLayerRef = useRef(null);
+  const userLocLayerRef = useRef(null);
 
   const [activeTile, setActiveTile] = useState('dark'); // 'dark' | 'osm'
   const [isLocating, setIsLocating] = useState(false);
   const [autoFollow, setAutoFollow] = useState(true);
-  const tileLayerRef = useRef(null);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(true);
+  const [locationNotice, setLocationNotice] = useState('');
+  
+  // Layer refs for multi-layer tiles
+  const baseTileRef = useRef(null);
+  const labelTileRef = useRef(null);
 
-  // Keep latest onAddWaypoint and mode in refs
+  // Keep latest callbacks and mode in refs
   const onAddWaypointRef = useRef(onAddWaypoint);
   const modeRef = useRef(mode);
 
@@ -40,6 +49,42 @@ export default function MapRoute({
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
+
+  // Helper to attach tile layers (NO API KEY REQUIRED)
+  const setTiles = (map, tileType) => {
+    if (baseTileRef.current) map.removeLayer(baseTileRef.current);
+    if (labelTileRef.current) map.removeLayer(labelTileRef.current);
+
+    if (tileType === 'dark') {
+      // Esri World Dark Gray Base (Clean, high-speed, NO API KEY, NO WATERMARK)
+      baseTileRef.current = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        {
+          maxZoom: 19,
+          attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors',
+        }
+      ).addTo(map);
+
+      // Esri World Dark Gray Reference (Clean labels & street names)
+      labelTileRef.current = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+        {
+          maxZoom: 19,
+          opacity: 0.85,
+        }
+      ).addTo(map);
+    } else {
+      // OpenStreetMap HOT (Clean street map, NO API KEY)
+      baseTileRef.current = L.tileLayer(
+        'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors, Humanitarian map style',
+        }
+      ).addTo(map);
+      labelTileRef.current = null;
+    }
+  };
 
   // Initialize Leaflet Map
   useEffect(() => {
@@ -53,26 +98,20 @@ export default function MapRoute({
       center: initialCenter,
       zoom: initialZoom,
       zoomControl: false,
+      attributionControl: true,
     });
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    const tileUrl =
-      'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    const tileLayer = L.tileLayer(tileUrl, {
-      subdomains: 'abcd',
-      maxZoom: 19,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    }).addTo(map);
+    // Initial tile layers (NO API KEY)
+    setTiles(map, 'dark');
 
-    tileLayerRef.current = tileLayer;
-
-    // Separate Layer Groups
+    // Feature Layers
     markersLayerRef.current = L.layerGroup().addTo(map);
     routeLayerRef.current = L.layerGroup().addTo(map);
     liveRouteLayerRef.current = L.layerGroup().addTo(map);
     liveMarkerLayerRef.current = L.layerGroup().addTo(map);
+    userLocLayerRef.current = L.layerGroup().addTo(map);
 
     // Map click event
     map.on('click', (e) => {
@@ -84,7 +123,7 @@ export default function MapRoute({
       }
     });
 
-    // Detect user pan dragging to disable autoFollow temporarily
+    // Detect user manual dragging
     map.on('dragstart', () => {
       if (modeRef.current === 'freerun') {
         setAutoFollow(false);
@@ -93,23 +132,26 @@ export default function MapRoute({
 
     mapInstanceRef.current = map;
 
-    // Detect initial position
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.setView(
-              [pos.coords.latitude, pos.coords.longitude],
-              15
-            );
-          }
-        },
-        () => {},
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
+    // Force Leaflet to recalculate container dimensions immediately
+    const t1 = setTimeout(() => map.invalidateSize(), 50);
+    const t2 = setTimeout(() => map.invalidateSize(), 300);
+    const t3 = setTimeout(() => map.invalidateSize(), 800);
+
+    let ro = null;
+    if (window.ResizeObserver && mapContainerRef.current) {
+      ro = new ResizeObserver(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      });
+      ro.observe(mapContainerRef.current);
     }
 
     return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      if (ro) ro.disconnect();
       map.remove();
       mapInstanceRef.current = null;
     };
@@ -118,35 +160,8 @@ export default function MapRoute({
   // Handle Tile Switching
   useEffect(() => {
     if (!mapInstanceRef.current) return;
-
-    if (tileLayerRef.current) {
-      mapInstanceRef.current.removeLayer(tileLayerRef.current);
-    }
-
-    let newTileLayer;
-    if (activeTile === 'dark') {
-      newTileLayer = L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        {
-          subdomains: 'abcd',
-          maxZoom: 19,
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        }
-      );
-    } else {
-      newTileLayer = L.tileLayer(
-        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        {
-          maxZoom: 19,
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        }
-      );
-    }
-
-    newTileLayer.addTo(mapInstanceRef.current);
-    tileLayerRef.current = newTileLayer;
+    setTiles(mapInstanceRef.current, activeTile);
+    mapInstanceRef.current.invalidateSize();
   }, [activeTile]);
 
   // Route Builder: Update Waypoints Markers
@@ -204,8 +219,8 @@ export default function MapRoute({
       const glowLayer = L.geoJSON(routeGeojson, {
         style: {
           color: '#10b981',
-          weight: 9,
-          opacity: 0.3,
+          weight: 8,
+          opacity: 0.35,
           lineCap: 'round',
           lineJoin: 'round',
         },
@@ -228,7 +243,7 @@ export default function MapRoute({
         const bounds = glowLayer.getBounds();
         if (bounds.isValid()) {
           mapInstanceRef.current.fitBounds(bounds, {
-            padding: [45, 45],
+            padding: [40, 40],
             maxZoom: 17,
             animate: true,
           });
@@ -248,7 +263,7 @@ export default function MapRoute({
     const latLngs = liveCoordinates.map((c) => [c.lat, c.lng]);
 
     if (latLngs.length > 0) {
-      // Start Marker (initial position in Free Run)
+      // Start Marker
       const startCoord = latLngs[0];
       const startIcon = L.divIcon({
         className: 'custom-pin-wrapper',
@@ -263,11 +278,11 @@ export default function MapRoute({
       const startMarker = L.marker(startCoord, { icon: startIcon });
       liveMarkerLayerRef.current.addLayer(startMarker);
 
-      // If at least 2 points, render live polyline
+      // Live polyline
       if (latLngs.length >= 2) {
         const glowPolyline = L.polyline(latLngs, {
           color: '#06b6d4',
-          weight: 10,
+          weight: 9,
           opacity: 0.35,
           lineCap: 'round',
           lineJoin: 'round',
@@ -275,7 +290,7 @@ export default function MapRoute({
 
         const sharpPolyline = L.polyline(latLngs, {
           color: '#38bdf8',
-          weight: 5,
+          weight: 4.5,
           opacity: 0.95,
           lineCap: 'round',
           lineJoin: 'round',
@@ -302,107 +317,173 @@ export default function MapRoute({
       const userMarker = L.marker(latestCoord, { icon: liveUserIcon, zIndexOffset: 1000 });
       liveMarkerLayerRef.current.addLayer(userMarker);
 
-      // Auto follow map view
       if (autoFollow && mapInstanceRef.current) {
         mapInstanceRef.current.panTo(latestCoord, { animate: true, duration: 0.5 });
       }
     }
   }, [liveCoordinates, mode, autoFollow]);
 
-  // Locate User GPS manually
-  const handleLocateMe = () => {
+  // Request Geolocation on user explicit click
+  const handleRequestLocation = () => {
     if (!navigator.geolocation) {
-      alert('Geolokasi tidak didukung oleh browser Anda.');
+      alert('Geolokasi tidak didukung oleh browser ini.');
+      setShowLocationPrompt(false);
       return;
     }
 
     setIsLocating(true);
+    setLocationNotice('Meminta izin GPS...');
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setIsLocating(false);
+        setShowLocationPrompt(false);
+        setLocationNotice('');
+
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+
         if (mapInstanceRef.current) {
-          mapInstanceRef.current.flyTo(
-            [pos.coords.latitude, pos.coords.longitude],
-            16,
-            { duration: 1.2 }
-          );
-          if (mode === 'freerun') {
-            setAutoFollow(true);
+          mapInstanceRef.current.flyTo([userLat, userLng], 16, { duration: 1.2 });
+          mapInstanceRef.current.invalidateSize();
+
+          if (userLocLayerRef.current) {
+            userLocLayerRef.current.clearLayers();
+            const userIcon = L.divIcon({
+              className: 'custom-live-icon',
+              html: `
+                <div class="marker-live-user">
+                  <div class="marker-live-pulse"></div>
+                  <div class="marker-live-dot"></div>
+                </div>
+              `,
+              iconSize: [38, 38],
+              iconAnchor: [19, 19],
+            });
+            const marker = L.marker([userLat, userLng], { icon: userIcon });
+            marker.bindPopup('<b>Lokasi Anda Saat Ini</b>');
+            userLocLayerRef.current.addLayer(marker);
           }
         }
       },
       (err) => {
         setIsLocating(false);
         console.warn('Geolocation error:', err.message);
-        alert('Gagal mendapatkan lokasi GPS Anda. Pastikan izin lokasi aktif.');
+
+        if (err.code === 1) {
+          setLocationNotice(
+            'Izin lokasi diblokir di browser. Ubah izin Lokasi di setelan URL browser.'
+          );
+        } else {
+          setLocationNotice('GPS HP tidak merespons. Pastikan GPS aktif.');
+        }
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
   return (
-    <div className="relative w-full h-full min-h-[420px] rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl bg-slate-900">
-      <div ref={mapContainerRef} className="w-full h-full" />
+    <div className="relative w-full h-[400px] sm:h-[480px] lg:h-[540px] rounded-xl sm:rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl bg-[#090e17]">
+      {/* Container Leaflet dengan height eksplisit 100% */}
+      <div
+        ref={mapContainerRef}
+        className="w-full h-full"
+        style={{ width: '100%', height: '100%' }}
+      />
+
+      {/* GPS PERMISSION PROMPT BANNER (Responsive for Mobile) */}
+      {showLocationPrompt && (
+        <div className="absolute bottom-12 left-2 right-2 sm:left-auto sm:right-auto sm:left-1/2 sm:-translate-x-1/2 z-[1000] max-w-sm w-auto bg-slate-900/95 backdrop-blur-xl border border-sky-500/50 rounded-xl p-2.5 sm:p-3 shadow-2xl flex items-center justify-between gap-2 text-left animate-fadeIn">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400 shrink-0">
+              <Navigation className="w-3.5 h-3.5 animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="text-xs font-bold text-white leading-tight">
+                Fokus ke Lokasi Saya?
+              </h4>
+              <p className="text-[10px] text-slate-300 leading-tight truncate">
+                {locationNotice || 'Klik untuk menyalakan GPS'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={handleRequestLocation}
+              disabled={isLocating}
+              className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-sky-500 to-cyan-500 text-slate-950 text-xs font-bold shadow transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+            >
+              {isLocating ? '...' : 'Izinkan'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowLocationPrompt(false)}
+              className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-all cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Route Loading Overlay in Builder mode */}
       {mode === 'builder' && isLoadingRoute && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2 bg-slate-900/90 backdrop-blur-md border border-emerald-500/40 rounded-full shadow-xl flex items-center gap-2.5 text-xs font-medium text-emerald-300">
-          <div className="w-3.5 h-3.5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-          <span>Menghubungkan rute jalan (OSRM)...</span>
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-3 py-1.5 bg-slate-900/90 backdrop-blur-md border border-emerald-500/40 rounded-full shadow-xl flex items-center gap-2 text-[11px] font-medium text-emerald-300">
+          <div className="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+          <span>Menghubungkan jalan (OSRM)...</span>
         </div>
       )}
 
       {/* Guide Banner for Route Builder */}
-      {mode === 'builder' && waypoints.length === 0 && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[999] pointer-events-none px-4 py-2 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 rounded-xl shadow-lg flex items-center gap-2 text-xs font-medium text-slate-300">
+      {mode === 'builder' && waypoints.length === 0 && !showLocationPrompt && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] pointer-events-none px-3 py-1.5 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 rounded-xl shadow-lg flex items-center gap-1.5 text-[11px] font-medium text-slate-300">
           <MapPin className="w-3.5 h-3.5 text-emerald-400 animate-bounce" />
-          <span>Klik di peta untuk menandai titik rute lari</span>
+          <span>Klik peta untuk menandai rute lari</span>
         </div>
       )}
 
       {/* Status Banner for Free Run Mode */}
       {mode === 'freerun' && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[999] px-4 py-2 bg-slate-900/90 backdrop-blur-md border border-sky-500/40 rounded-xl shadow-lg flex items-center gap-2.5 text-xs font-semibold text-sky-300">
-          <Radio className={`w-3.5 h-3.5 ${isLiveTracking ? 'text-sky-400 animate-pulse' : 'text-slate-400'}`} />
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] px-3 py-1.5 bg-slate-900/90 backdrop-blur-md border border-sky-500/40 rounded-xl shadow-lg flex items-center gap-2 text-[11px] font-semibold text-sky-300">
+          <Radio className={`w-3 h-3 ${isLiveTracking ? 'text-sky-400 animate-pulse' : 'text-slate-400'}`} />
           <span>
             {isLiveTracking
-              ? `Melacak GPS Live (${liveCoordinates.length} titik tercatat)`
-              : 'Klik "Mulai" untuk mengaktifkan live tracking GPS'}
+              ? `GPS Live (${liveCoordinates.length} pts)`
+              : 'Klik "Mulai" untuk lacak GPS'}
           </span>
         </div>
       )}
 
       {/* Floating Controls Top-Right */}
-      <div className="absolute top-4 right-4 z-[999] flex flex-col gap-2">
-        {/* GPS Locate / Follow Button */}
+      <div className="absolute top-3 right-3 z-[999] flex flex-col gap-1.5">
         <button
           type="button"
-          onClick={handleLocateMe}
-          title={mode === 'freerun' ? 'Fokus & ikuti posisi saya' : 'Fokus ke lokasi saya'}
-          className={`p-2.5 backdrop-blur-md rounded-xl border shadow-lg transition-all active:scale-95 flex items-center justify-center cursor-pointer ${
+          onClick={handleRequestLocation}
+          title="Fokus ke lokasi saya"
+          className={`p-2 backdrop-blur-md rounded-xl border shadow-lg transition-all active:scale-95 flex items-center justify-center cursor-pointer ${
             mode === 'freerun' && autoFollow
               ? 'bg-sky-500/20 text-sky-300 border-sky-500/60'
               : 'bg-slate-900/85 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border-slate-700/70'
           }`}
         >
-          <Crosshair className={`w-4 h-4 ${isLocating ? 'animate-spin text-emerald-400' : ''}`} />
+          <Crosshair className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLocating ? 'animate-spin text-emerald-400' : ''}`} />
         </button>
 
-        {/* Tile Layer Switcher */}
         <button
           type="button"
           onClick={() => setActiveTile(activeTile === 'dark' ? 'osm' : 'dark')}
-          title={activeTile === 'dark' ? 'Ganti ke OpenStreetMap' : 'Ganti ke Dark Matter'}
-          className="p-2.5 bg-slate-900/85 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-lg transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+          title={activeTile === 'dark' ? 'Ganti ke OpenStreetMap' : 'Ganti ke Dark Mode'}
+          className="p-2 bg-slate-900/85 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-lg transition-all active:scale-95 flex items-center justify-center cursor-pointer"
         >
-          <Layers className="w-4 h-4" />
+          <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
       </div>
 
       {/* Mode & Stats badge bottom-left */}
-      <div className="absolute bottom-3 left-3 z-[999] px-3 py-1.5 bg-slate-950/85 backdrop-blur-md rounded-lg border border-slate-800 text-[11px] font-mono text-slate-400 flex items-center gap-2">
+      <div className="absolute bottom-2 left-2 z-[999] px-2.5 py-1 bg-slate-950/85 backdrop-blur-md rounded-lg border border-slate-800 text-[10px] font-mono text-slate-400 flex items-center gap-1.5">
         <span
-          className={`w-2 h-2 rounded-full ${
+          className={`w-1.5 h-1.5 rounded-full ${
             mode === 'freerun'
               ? isLiveTracking
                 ? 'bg-sky-400 animate-ping'
@@ -412,8 +493,8 @@ export default function MapRoute({
         />
         <span>
           {mode === 'freerun'
-            ? `Free Run: ${liveCoordinates.length} GPS pts`
-            : `Builder: ${waypoints.length} titik`}
+            ? `${liveCoordinates.length} GPS pts`
+            : `${waypoints.length} titik`}
         </span>
       </div>
     </div>
