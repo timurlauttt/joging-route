@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="id" class="dark">
+<html lang="id" class="dark overflow-x-hidden w-full max-w-full">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>OnTrack — Minimalist Running & Route Tracker</title>
     <meta name="description" content="OnTrack — Pelacak rute lari minimalis dan modern dengan pelacakan GPS live, stopwatch, pace realtime, dan kartu sesi lari estetis." />
+    <link rel="canonical" href="https://ontrack.pages.dev/" />
     
     <!-- PWA Settings -->
     <link rel="manifest" href="/manifest.json" />
@@ -16,13 +17,20 @@
     <link rel="icon" type="image/svg+xml" href="/ontrack-icon.svg" />
     <link rel="apple-touch-icon" href="/ontrack-icon.svg" />
 
-    <!-- Google Fonts: Inter -->
+    <!-- Map Tile Server Preconnect for Fast LCP -->
+    <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin>
+    <link rel="dns-prefetch" href="https://server.arcgisonline.com">
+
+    <!-- Google Fonts: Non-blocking asynchronous loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+    </noscript>
   </head>
-  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500/30 selection:text-emerald-300">
-    <div id="root"></div>
+  <body class="bg-zinc-950 text-zinc-100 antialiased selection:bg-orange-500/30 selection:text-orange-300 overflow-x-hidden w-full max-w-full m-0 p-0 relative">
+    <div id="root" class="w-full max-w-full overflow-x-hidden"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

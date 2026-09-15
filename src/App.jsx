@@ -1,12 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import Navbar from './components/Navbar';
 import MapRoute from './components/MapRoute';
 import MetricCards from './components/MetricCards';
 import ControlsBar from './components/ControlsBar';
-import ShareModal from './components/ShareModal';
-import InfoModal from './components/InfoModal';
 import { fetchWalkingRoute, haversineDistance } from './utils/osrm';
 import { calculatePace } from './utils/formatters';
+
+const ShareModal = lazy(() => import('./components/ShareModal'));
+const InfoModal = lazy(() => import('./components/InfoModal'));
 import { translations } from './utils/translations';
 import { startBackgroundAudio, stopBackgroundAudio } from './utils/backgroundAudio';
 import { speakKilometerSplit } from './utils/audioCues';
@@ -416,7 +417,7 @@ export default function App() {
   }, [mode, stopGpsTracking, releaseWakeLock]);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col selection:bg-zinc-800 selection:text-white">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col selection:bg-zinc-800 selection:text-white w-full max-w-full overflow-x-hidden relative">
       {/* Top Navigation Bar with Mode Switcher & Wake Lock indicator & Language Toggle */}
       <Navbar
         mode={mode}
@@ -431,7 +432,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-2.5 sm:p-4 lg:p-6 flex flex-col gap-2.5 sm:gap-3.5">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-4 lg:p-6 flex flex-col gap-2.5 sm:gap-3.5 overflow-x-hidden min-w-0">
         {/* Metric Cards Top Row */}
         <MetricCards
           mode={mode}
@@ -442,7 +443,7 @@ export default function App() {
         />
 
         {/* Map View & Route Canvas */}
-        <div className="w-full relative rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+        <div className="w-full max-w-full relative rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
           <MapRoute
             mode={mode}
             waypoints={waypoints}
@@ -514,23 +515,31 @@ export default function App() {
       </main>
 
       {/* OnTrack Share Card Modal */}
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        distanceMeters={activeDistance}
-        timerSeconds={timerSeconds}
-        routeCoordinates={activeCoordinates}
-        splits={splits}
-        lang={lang}
-        t={t}
-      />
+      <Suspense fallback={null}>
+        {isShareModalOpen && (
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            distanceMeters={activeDistance}
+            timerSeconds={timerSeconds}
+            routeCoordinates={activeCoordinates}
+            splits={splits}
+            lang={lang}
+            t={t}
+          />
+        )}
+      </Suspense>
 
       {/* OnTrack User Guide & Privacy Policy Modal */}
-      <InfoModal
-        isOpen={isInfoModalOpen}
-        onClose={handleCloseInfoModal}
-        t={t}
-      />
+      <Suspense fallback={null}>
+        {isInfoModalOpen && (
+          <InfoModal
+            isOpen={isInfoModalOpen}
+            onClose={handleCloseInfoModal}
+            t={t}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

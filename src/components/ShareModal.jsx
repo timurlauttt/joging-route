@@ -265,8 +265,8 @@ export default function ShareModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl my-auto text-zinc-100 flex flex-col md:flex-row gap-5 sm:gap-6 items-center">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto overflow-x-hidden w-full max-w-full animate-fadeIn">
+      <div className="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl my-auto text-zinc-100 flex flex-col md:flex-row gap-5 sm:gap-6 items-center min-w-0">
         <button
           type="button"
           onClick={onClose}

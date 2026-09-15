@@ -34,23 +34,23 @@ export default function MetricCards({
   const calories = calculateCalories(distanceMeters);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 w-full">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3.5 w-full max-w-full min-w-0">
       {/* Distance Card */}
-      <div className="bg-zinc-900/80 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-zinc-800/80 shadow-sm transition-colors hover:border-zinc-700">
-        <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-            <Route className="w-3.5 h-3.5 text-zinc-400" />
-            {m.distance}
+      <div className="bg-zinc-900/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-zinc-800/80 shadow-sm transition-colors hover:border-zinc-700 min-w-0">
+        <div className="flex items-center justify-between mb-1.5 sm:mb-2 min-w-0">
+          <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 truncate">
+            <Route className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+            <span className="truncate">{m.distance}</span>
           </span>
-          <span className="text-[10px] text-zinc-500 font-medium">
+          <span className="text-[10px] text-zinc-500 font-medium shrink-0">
             {mode === 'freerun' ? m.distanceGPS : m.distanceRoute}
           </span>
         </div>
-        <div className="flex items-baseline gap-1">
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-mono">
+        <div className="flex items-baseline gap-1 min-w-0">
+          <span className="text-xl sm:text-3xl font-extrabold tracking-tight text-white font-mono truncate">
             {distanceMeters > 0 ? formattedDistance.replace(' km', '') : '0.00'}
           </span>
-          <span className="text-xs sm:text-sm font-semibold text-zinc-400">km</span>
+          <span className="text-xs sm:text-sm font-semibold text-zinc-400 shrink-0">km</span>
         </div>
         <p className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 truncate">
           {distanceMeters > 0
@@ -60,21 +60,21 @@ export default function MetricCards({
       </div>
 
       {/* Time Card */}
-      <div className="bg-zinc-900/80 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-zinc-800/80 shadow-sm transition-colors hover:border-zinc-700">
-        <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-            <Timer className="w-3.5 h-3.5 text-zinc-400" />
-            {m.time}
+      <div className="bg-zinc-900/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-zinc-800/80 shadow-sm transition-colors hover:border-zinc-700 min-w-0">
+        <div className="flex items-center justify-between mb-1.5 sm:mb-2 min-w-0">
+          <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 truncate">
+            <Timer className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+            <span className="truncate">{m.time}</span>
           </span>
           {isRunning && (
-            <span className="flex h-2 w-2 relative">
+            <span className="flex h-2 w-2 relative shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
             </span>
           )}
         </div>
-        <div className="flex items-baseline">
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-mono">
+        <div className="flex items-baseline min-w-0">
+          <span className="text-xl sm:text-3xl font-extrabold tracking-tight text-white font-mono truncate">
             {formattedTime}
           </span>
         </div>
@@ -84,18 +84,18 @@ export default function MetricCards({
       </div>
 
       {/* Pace Card */}
-      <div className="bg-zinc-900/80 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-zinc-800/80 shadow-sm transition-colors hover:border-zinc-700">
-        <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-            <Gauge className="w-3.5 h-3.5 text-zinc-400" />
-            {m.avgPace}
+      <div className="bg-zinc-900/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-zinc-800/80 shadow-sm transition-colors hover:border-zinc-700 min-w-0">
+        <div className="flex items-center justify-between mb-1.5 sm:mb-2 min-w-0">
+          <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 truncate">
+            <Gauge className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+            <span className="truncate">{m.avgPace}</span>
           </span>
         </div>
-        <div className="flex items-baseline gap-1">
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-mono">
+        <div className="flex items-baseline gap-1 min-w-0">
+          <span className="text-xl sm:text-3xl font-extrabold tracking-tight text-white font-mono truncate">
             {formattedPace.split(' ')[0]}
           </span>
-          <span className="text-xs sm:text-sm font-semibold text-zinc-400">/km</span>
+          <span className="text-xs sm:text-sm font-semibold text-zinc-400 shrink-0">/km</span>
         </div>
         <p className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 truncate">
           {distanceMeters > 0 && timerSeconds > 0 ? m.paceRealtime : m.paceNeedsData}
@@ -103,18 +103,18 @@ export default function MetricCards({
       </div>
 
       {/* Calories Card */}
-      <div className="bg-zinc-900/80 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-zinc-800/80 shadow-sm transition-colors hover:border-zinc-700">
-        <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-            <Flame className="w-3.5 h-3.5 text-zinc-400" />
-            {m.calories}
+      <div className="bg-zinc-900/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-zinc-800/80 shadow-sm transition-colors hover:border-zinc-700 min-w-0">
+        <div className="flex items-center justify-between mb-1.5 sm:mb-2 min-w-0">
+          <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 truncate">
+            <Flame className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+            <span className="truncate">{m.calories}</span>
           </span>
         </div>
-        <div className="flex items-baseline gap-1">
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-mono">
+        <div className="flex items-baseline gap-1 min-w-0">
+          <span className="text-xl sm:text-3xl font-extrabold tracking-tight text-white font-mono truncate">
             {calories}
           </span>
-          <span className="text-xs sm:text-sm font-semibold text-zinc-400">kcal</span>
+          <span className="text-xs sm:text-sm font-semibold text-zinc-400 shrink-0">kcal</span>
         </div>
         <p className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 truncate">
           {m.caloriesSub}

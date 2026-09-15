@@ -407,6 +407,7 @@ export default function MapRoute({
             <button
               type="button"
               onClick={() => setShowLocationPrompt(false)}
+              aria-label="Tutup rekomendasi lokasi"
               className="p-1 text-zinc-400 hover:text-white rounded hover:bg-zinc-800 transition-all cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />

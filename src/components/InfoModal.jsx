@@ -42,8 +42,8 @@ export default function InfoModal({ isOpen, onClose, t }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[2500] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-      <div className="relative w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl my-auto text-zinc-100 flex flex-col gap-4">
+    <div className="fixed inset-0 z-[2500] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto overflow-x-hidden w-full max-w-full animate-fadeIn">
+      <div className="relative w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl my-auto text-zinc-100 flex flex-col gap-4 min-w-0">
         {/* Close Button */}
         <button
           type="button"
@@ -108,9 +108,9 @@ export default function InfoModal({ isOpen, onClose, t }) {
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-zinc-100">
+                  <h3 className="text-xs sm:text-sm font-bold text-zinc-100">
                     {info.guideStep1Title}
-                  </h4>
+                  </h3>
                   <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 leading-relaxed">
                     {info.guideStep1Desc}
                   </p>
@@ -123,9 +123,9 @@ export default function InfoModal({ isOpen, onClose, t }) {
                   <Radio className="w-4 h-4 animate-pulse" />
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-zinc-100">
+                  <h3 className="text-xs sm:text-sm font-bold text-zinc-100">
                     {info.guideStep2Title}
-                  </h4>
+                  </h3>
                   <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 leading-relaxed">
                     {info.guideStep2Desc}
                   </p>
@@ -138,9 +138,9 @@ export default function InfoModal({ isOpen, onClose, t }) {
                   <Share2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-zinc-100">
+                  <h3 className="text-xs sm:text-sm font-bold text-zinc-100">
                     {info.guideStep3Title}
-                  </h4>
+                  </h3>
                   <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 leading-relaxed">
                     {info.guideStep3Desc}
                   </p>
@@ -163,9 +163,9 @@ export default function InfoModal({ isOpen, onClose, t }) {
                   <ServerOff className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-zinc-100">
+                  <h3 className="text-xs sm:text-sm font-bold text-zinc-100">
                     {info.privacyPoint1Title}
-                  </h4>
+                  </h3>
                   <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 leading-relaxed">
                     {info.privacyPoint1Desc}
                   </p>
@@ -178,9 +178,9 @@ export default function InfoModal({ isOpen, onClose, t }) {
                   <Cpu className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-zinc-100">
+                  <h3 className="text-xs sm:text-sm font-bold text-zinc-100">
                     {info.privacyPoint2Title}
-                  </h4>
+                  </h3>
                   <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 leading-relaxed">
                     {info.privacyPoint2Desc}
                   </p>
@@ -193,9 +193,9 @@ export default function InfoModal({ isOpen, onClose, t }) {
                   <Navigation className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-zinc-100">
+                  <h3 className="text-xs sm:text-sm font-bold text-zinc-100">
                     {info.privacyPoint3Title}
-                  </h4>
+                  </h3>
                   <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 leading-relaxed">
                     {info.privacyPoint3Desc}
                   </p>

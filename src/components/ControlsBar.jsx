@@ -36,7 +36,7 @@ export default function ControlsBar({
   const hasRouteData = mode === 'builder' ? waypointsCount > 0 : liveCoordinatesCount > 0;
 
   return (
-    <div className="w-full bg-zinc-900/90 backdrop-blur-xl border border-zinc-800 rounded-xl sm:rounded-2xl p-2 sm:p-3 shadow-md flex items-center justify-between gap-1.5 sm:gap-3">
+    <div className="w-full max-w-full bg-zinc-900/90 backdrop-blur-xl border border-zinc-800 rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-md flex items-center justify-between gap-1 sm:gap-3 overflow-x-hidden min-w-0">
       {/* Route editing actions */}
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
         {mode === 'builder' ? (
@@ -46,7 +46,7 @@ export default function ControlsBar({
               onClick={onUndoWaypoint}
               disabled={waypointsCount === 0}
               title={c.undoTitle}
-              className="p-2 sm:px-3 sm:py-2 text-xs font-medium rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white disabled:opacity-30 border border-zinc-700/60 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+              className="p-1.5 sm:px-3 sm:py-2 text-xs font-medium rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white disabled:opacity-30 border border-zinc-700/60 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
             >
               <Undo2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{c.undo}</span>
@@ -57,7 +57,7 @@ export default function ControlsBar({
               onClick={onClearRoute}
               disabled={waypointsCount === 0}
               title={c.resetTitle}
-              className="p-2 sm:px-3 sm:py-2 text-xs font-medium rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-rose-300 disabled:opacity-30 border border-zinc-700/60 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+              className="p-1.5 sm:px-3 sm:py-2 text-xs font-medium rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-rose-300 disabled:opacity-30 border border-zinc-700/60 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
             >
               <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{c.reset}</span>
@@ -69,7 +69,7 @@ export default function ControlsBar({
             onClick={onClearRoute}
             disabled={liveCoordinatesCount === 0 && timerSeconds === 0}
             title={c.resetGps}
-            className="p-2 sm:px-3 sm:py-2 text-xs font-medium rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 disabled:opacity-30 border border-zinc-700/60 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+            className="p-1.5 sm:px-3 sm:py-2 text-xs font-medium rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 disabled:opacity-30 border border-zinc-700/60 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
           >
             <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">{c.resetGps}</span>
@@ -78,12 +78,12 @@ export default function ControlsBar({
       </div>
 
       {/* Stopwatch Controls */}
-      <div className="flex items-center gap-1 sm:gap-1.5 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+      <div className="flex items-center gap-1 sm:gap-1.5 bg-zinc-950 p-0.5 sm:p-1 rounded-xl border border-zinc-800 shrink-0">
         {!isRunning ? (
           <button
             type="button"
             onClick={onStartTimer}
-            className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs transition-all active:scale-95 cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs transition-all active:scale-95 cursor-pointer ${
               mode === 'freerun'
                 ? 'bg-orange-500 hover:bg-orange-400 text-white shadow-sm'
                 : 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-sm'
@@ -100,7 +100,7 @@ export default function ControlsBar({
           <button
             type="button"
             onClick={onPauseTimer}
-            className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-zinc-700 font-bold text-xs transition-all active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-zinc-700 font-bold text-xs transition-all active:scale-95 cursor-pointer"
           >
             <Pause className="w-3.5 h-3.5 fill-current" />
             <span>{c.pause}</span>
@@ -124,7 +124,7 @@ export default function ControlsBar({
           type="button"
           onClick={onToggleVoiceCue}
           title={isVoiceCueEnabled ? c.voiceCueTitleOn : c.voiceCueTitleOff}
-          className={`p-2 sm:px-2.5 sm:py-2 text-xs font-medium rounded-xl border transition-all active:scale-95 cursor-pointer flex items-center gap-1 ${
+          className={`p-1.5 sm:px-2.5 sm:py-2 text-xs font-medium rounded-xl border transition-all active:scale-95 cursor-pointer flex items-center gap-1 ${
             isVoiceCueEnabled
               ? 'bg-zinc-800 text-orange-400 border-orange-500/30 hover:bg-zinc-700'
               : 'bg-zinc-800/60 text-zinc-500 border-zinc-700 hover:text-zinc-300'
@@ -142,7 +142,7 @@ export default function ControlsBar({
           onClick={onOpenShareModal}
           disabled={!hasRouteData && timerSeconds === 0}
           title={c.shareTitle}
-          className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none transition-all active:scale-95 cursor-pointer shadow-sm"
+          className="flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none transition-all active:scale-95 cursor-pointer shadow-sm"
         >
           <Share2 className="w-3.5 h-3.5 text-zinc-300" />
           <span>{c.share}</span>
