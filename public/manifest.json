@@ -1,0 +1,19 @@
+{
+  "name": "OnTrack — Running & Route Tracker",
+  "short_name": "OnTrack",
+  "description": "Minimalist, privacy-first athletic running tracker and road route planner.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/ontrack-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

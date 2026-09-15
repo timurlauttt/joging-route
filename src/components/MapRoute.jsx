@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Crosshair, Layers, MapPin, Radio, Navigation, X } from 'lucide-react';
@@ -17,7 +17,33 @@ export default function MapRoute({
   isLiveTracking = false,
   isLoadingRoute = false,
   onAddWaypoint,
+  t,
 }) {
+  const m = useMemo(
+    () =>
+      t?.map || {
+        promptTitle: 'Fokuskan ke Lokasi Saya?',
+        promptSub: 'Nyalakan GPS untuk memusatkan peta',
+        promptSeeking: 'Mencari posisi...',
+        allowBtn: 'Izinkan',
+        seekingBtn: '...',
+        deniedNotice: 'Izin lokasi diblokir. Aktifkan izin lokasi di URL browser.',
+        timeoutNotice: 'GPS tidak merespons. Pastikan GPS HP aktif.',
+        snapping: 'Menyesuaikan rute...',
+        emptyBuilderGuide: 'Klik peta untuk menandai rute',
+        freeRunTracking: 'GPS Live',
+        freeRunIdle: 'Klik "Mulai" untuk merekam GPS',
+        locateTitle: 'Fokus ke lokasi saya',
+        layerLight: 'Ganti ke Mode Terang',
+        layerDark: 'Ganti ke Mode Gelap',
+        startMarker: 'Titik Awal (Start)',
+        finishMarker: 'Titik Akhir (Finish)',
+        waypoint: 'Waypoint',
+        myLocation: 'Lokasi Anda',
+      },
+    [t]
+  );
+
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersLayerRef = useRef(null);
@@ -188,12 +214,12 @@ export default function MapRoute({
       const marker = L.marker([pt.lat, pt.lng], { icon });
       marker.bindPopup(
         `<div class="text-xs text-zinc-900 font-sans py-0.5">
-          <b>${isStart ? 'Titik Awal (Start)' : isEnd ? 'Titik Akhir (Finish)' : `Waypoint #${index + 1}`}</b>
+          <b>${isStart ? m.startMarker : isEnd ? m.finishMarker : `${m.waypoint} #${index + 1}`}</b>
         </div>`
       );
       markersLayerRef.current.addLayer(marker);
     });
-  }, [waypoints, mode]);
+  }, [waypoints, mode, m]);
 
   // Route Builder: Render clean solid route polyline
   useEffect(() => {
@@ -292,13 +318,13 @@ export default function MapRoute({
   // Request Geolocation
   const handleRequestLocation = () => {
     if (!navigator.geolocation) {
-      alert('Geolokasi tidak didukung oleh browser ini.');
+      alert(m.deniedNotice || 'Geolokasi tidak didukung.');
       setShowLocationPrompt(false);
       return;
     }
 
     setIsLocating(true);
-    setLocationNotice('Mencari posisi...');
+    setLocationNotice(m.promptSeeking);
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -327,7 +353,7 @@ export default function MapRoute({
               iconAnchor: [16, 16],
             });
             const marker = L.marker([userLat, userLng], { icon: userIcon });
-            marker.bindPopup('<b>Lokasi Anda</b>');
+            marker.bindPopup(`<b>${m.myLocation}</b>`);
             userLocLayerRef.current.addLayer(marker);
           }
         }
@@ -336,9 +362,9 @@ export default function MapRoute({
         setIsLocating(false);
         console.warn('Geolocation error:', err.message);
         if (err.code === 1) {
-          setLocationNotice('Izin lokasi diblokir. Aktifkan izin lokasi di URL browser.');
+          setLocationNotice(m.deniedNotice);
         } else {
-          setLocationNotice('GPS tidak merespons. Pastikan GPS HP aktif.');
+          setLocationNotice(m.timeoutNotice);
         }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -362,10 +388,10 @@ export default function MapRoute({
             </div>
             <div className="min-w-0">
               <h4 className="text-xs font-semibold text-white leading-tight">
-                Fokuskan ke Lokasi Saya?
+                {m.promptTitle}
               </h4>
               <p className="text-[10px] text-zinc-400 leading-tight truncate">
-                {locationNotice || 'Nyalakan GPS untuk memusatkan peta'}
+                {locationNotice || m.promptSub}
               </p>
             </div>
           </div>
@@ -376,7 +402,7 @@ export default function MapRoute({
               disabled={isLocating}
               className="px-2.5 py-1 rounded-lg bg-white text-zinc-950 text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
             >
-              {isLocating ? '...' : 'Izinkan'}
+              {isLocating ? m.seekingBtn : m.allowBtn}
             </button>
             <button
               type="button"
@@ -393,7 +419,7 @@ export default function MapRoute({
       {mode === 'builder' && isLoadingRoute && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-3 py-1.5 bg-zinc-900/95 border border-zinc-700 rounded-full shadow-lg flex items-center gap-2 text-[11px] font-medium text-zinc-200">
           <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-          <span>Menyesuaikan rute...</span>
+          <span>{m.snapping}</span>
         </div>
       )}
 
@@ -401,7 +427,7 @@ export default function MapRoute({
       {mode === 'builder' && waypoints.length === 0 && !showLocationPrompt && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] pointer-events-none px-3 py-1.5 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-lg flex items-center gap-1.5 text-[11px] font-medium text-zinc-300">
           <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-          <span>Klik peta untuk menandai rute</span>
+          <span>{m.emptyBuilderGuide}</span>
         </div>
       )}
 
@@ -411,8 +437,8 @@ export default function MapRoute({
           <Radio className={`w-3 h-3 ${isLiveTracking ? 'text-orange-400 animate-pulse' : 'text-zinc-500'}`} />
           <span>
             {isLiveTracking
-              ? `GPS Live (${liveCoordinates.length} titik)`
-              : 'Klik "Mulai" untuk merekam GPS'}
+              ? `${m.freeRunTracking} (${liveCoordinates.length})`
+              : m.freeRunIdle}
           </span>
         </div>
       )}
@@ -422,7 +448,7 @@ export default function MapRoute({
         <button
           type="button"
           onClick={handleRequestLocation}
-          title="Fokus ke lokasi saya"
+          title={m.locateTitle}
           className="p-2 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white backdrop-blur-md rounded-xl border border-zinc-700 shadow-md transition-all active:scale-95 flex items-center justify-center cursor-pointer"
         >
           <Crosshair className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLocating ? 'animate-spin text-orange-400' : ''}`} />
@@ -431,7 +457,7 @@ export default function MapRoute({
         <button
           type="button"
           onClick={() => setActiveTile(activeTile === 'dark' ? 'osm' : 'dark')}
-          title={activeTile === 'dark' ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'}
+          title={activeTile === 'dark' ? m.layerLight : m.layerDark}
           className="p-2 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white backdrop-blur-md rounded-xl border border-zinc-700 shadow-md transition-all active:scale-95 flex items-center justify-center cursor-pointer"
         >
           <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -452,7 +478,7 @@ export default function MapRoute({
         <span>
           {mode === 'freerun'
             ? `${liveCoordinates.length} GPS pts`
-            : `${waypoints.length} titik`}
+            : `${waypoints.length} pt`}
         </span>
       </div>
     </div>

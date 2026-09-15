@@ -1,4 +1,4 @@
-import { Compass, MapPin, Radio, Sun } from 'lucide-react';
+import { Compass, Languages, MapPin, Radio, Sun } from 'lucide-react';
 
 export default function Navbar({
   mode,
@@ -7,20 +7,28 @@ export default function Navbar({
   liveCoordinatesCount,
   isRunning,
   isWakeLockActive,
+  lang = 'id',
+  setLang,
+  t,
 }) {
+  const nav = t?.nav || {
+    builder: 'Builder',
+    freeRun: 'Free Run',
+    wakeLock: 'Layar Aktif',
+    tracking: 'Tracking',
+    points: 'Pt',
+    gps: 'GPS',
+    standby: 'Standby',
+  };
+
   return (
     <header className="w-full bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-800/70 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2.5 sm:gap-4">
         {/* Brand Logo & Name */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white text-zinc-950 flex items-center justify-center font-black text-sm tracking-tighter shadow-sm">
-            <span>OT</span>
-          </div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-base sm:text-lg font-bold tracking-tight text-white font-sans">
-              OnTrack<span className="text-orange-500">.</span>
-            </span>
-          </div>
+        <div className="flex items-center shrink-0">
+          <span className="text-base sm:text-lg font-black tracking-tight text-white font-sans">
+            OnTrack<span className="text-orange-500">.</span>
+          </span>
         </div>
 
         {/* Mode Switcher Tabs (Clean Athletic Segmented Pill) */}
@@ -35,7 +43,7 @@ export default function Navbar({
             }`}
           >
             <MapPin className="w-3.5 h-3.5" />
-            <span>Builder</span>
+            <span>{nav.builder}</span>
           </button>
 
           <button
@@ -47,42 +55,81 @@ export default function Navbar({
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <Radio className={`w-3.5 h-3.5 ${mode === 'freerun' && isRunning ? 'text-orange-400 animate-pulse' : ''}`} />
-            <span>Free Run</span>
+            <Radio
+              className={`w-3.5 h-3.5 ${
+                mode === 'freerun' && isRunning ? 'text-orange-400 animate-pulse' : ''
+              }`}
+            />
+            <span>{nav.freeRun}</span>
           </button>
         </div>
 
-        {/* Status Indicators */}
+        {/* Right Section: Language Toggle & Status Indicators */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Language Toggle Switch [ ID | EN ] */}
+          <div className="flex items-center gap-1.5 bg-zinc-900/90 pl-2 pr-1 py-1 rounded-xl border border-zinc-800">
+            <Languages className="w-3.5 h-3.5 text-zinc-400 shrink-0 hidden sm:inline" />
+            <div className="flex items-center bg-zinc-950 p-0.5 rounded-lg border border-zinc-850">
+              <button
+                type="button"
+                onClick={() => setLang('id')}
+                aria-label="Bahasa Indonesia"
+                className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider transition-all cursor-pointer ${
+                  lang === 'id'
+                    ? 'bg-zinc-800 text-white shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                ID
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang('en')}
+                aria-label="English"
+                className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider transition-all cursor-pointer ${
+                  lang === 'en'
+                    ? 'bg-zinc-800 text-white shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                EN
+              </button>
+            </div>
+          </div>
+
           {isWakeLockActive && (
             <div
-              title="Layar HP dijaga tetap aktif"
+              title={lang === 'en' ? 'Screen kept awake' : 'Layar HP dijaga tetap aktif'}
               className="flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-[11px] font-medium"
             >
               <Sun className="w-3 h-3 text-amber-400" />
-              <span className="hidden sm:inline">Layar Aktif</span>
+              <span className="hidden md:inline">{nav.wakeLock}</span>
             </div>
           )}
 
           {isRunning ? (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-ping" />
-              <span className="hidden sm:inline">Tracking</span>
+              <span className="hidden sm:inline">{nav.tracking}</span>
             </div>
           ) : mode === 'builder' && waypointsCount > 0 ? (
             <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium">
               <Compass className="w-3.5 h-3.5 text-zinc-400" />
-              <span>{waypointsCount} Pt</span>
+              <span>
+                {waypointsCount} {nav.points}
+              </span>
             </div>
           ) : mode === 'freerun' && liveCoordinatesCount > 0 ? (
             <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium">
               <Radio className="w-3.5 h-3.5 text-zinc-400" />
-              <span>{liveCoordinatesCount} GPS</span>
+              <span>
+                {liveCoordinatesCount} {nav.gps}
+              </span>
             </div>
           ) : (
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-medium">
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
-              <span>Standby</span>
+              <span>{nav.standby}</span>
             </div>
           )}
         </div>

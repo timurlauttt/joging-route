@@ -10,7 +10,24 @@ export default function MetricCards({
   distanceMeters,
   timerSeconds,
   isRunning,
+  t,
 }) {
+  const m = t?.metrics || {
+    distance: 'Jarak',
+    distanceRoute: 'Rute',
+    distanceGPS: 'GPS',
+    noPoints: 'Belum ada titik',
+    meterUnit: 'meter',
+    time: 'Waktu',
+    timerActive: 'Stopwatch aktif',
+    timerPaused: 'Dijeda',
+    avgPace: 'Pace Rata-rata',
+    paceRealtime: 'Kalkulasi realtime',
+    paceNeedsData: 'Butuh rute & waktu',
+    calories: 'Estimasi Energi',
+    caloriesSub: 'Kalori terbakar',
+  };
+
   const formattedDistance = formatDistance(distanceMeters);
   const formattedTime = formatTime(timerSeconds);
   const formattedPace = calculatePace(timerSeconds, distanceMeters);
@@ -23,10 +40,10 @@ export default function MetricCards({
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
           <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
             <Route className="w-3.5 h-3.5 text-zinc-400" />
-            Jarak
+            {m.distance}
           </span>
           <span className="text-[10px] text-zinc-500 font-medium">
-            {mode === 'freerun' ? 'GPS' : 'Rute'}
+            {mode === 'freerun' ? m.distanceGPS : m.distanceRoute}
           </span>
         </div>
         <div className="flex items-baseline gap-1">
@@ -36,7 +53,9 @@ export default function MetricCards({
           <span className="text-xs sm:text-sm font-semibold text-zinc-400">km</span>
         </div>
         <p className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 truncate">
-          {distanceMeters > 0 ? `${Math.round(distanceMeters).toLocaleString()} meter` : 'Belum ada titik'}
+          {distanceMeters > 0
+            ? `${Math.round(distanceMeters).toLocaleString()} ${m.meterUnit}`
+            : m.noPoints}
         </p>
       </div>
 
@@ -45,7 +64,7 @@ export default function MetricCards({
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
           <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
             <Timer className="w-3.5 h-3.5 text-zinc-400" />
-            Waktu
+            {m.time}
           </span>
           {isRunning && (
             <span className="flex h-2 w-2 relative">
@@ -60,7 +79,7 @@ export default function MetricCards({
           </span>
         </div>
         <p className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 truncate">
-          {isRunning ? 'Stopwatch aktif' : timerSeconds > 0 ? 'Dijeda' : '00:00:00'}
+          {isRunning ? m.timerActive : timerSeconds > 0 ? m.timerPaused : '00:00:00'}
         </p>
       </div>
 
@@ -69,7 +88,7 @@ export default function MetricCards({
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
           <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
             <Gauge className="w-3.5 h-3.5 text-zinc-400" />
-            Pace Rata-rata
+            {m.avgPace}
           </span>
         </div>
         <div className="flex items-baseline gap-1">
@@ -79,7 +98,7 @@ export default function MetricCards({
           <span className="text-xs sm:text-sm font-semibold text-zinc-400">/km</span>
         </div>
         <p className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 truncate">
-          {distanceMeters > 0 && timerSeconds > 0 ? 'Kalkulasi realtime' : 'Butuh rute & waktu'}
+          {distanceMeters > 0 && timerSeconds > 0 ? m.paceRealtime : m.paceNeedsData}
         </p>
       </div>
 
@@ -88,7 +107,7 @@ export default function MetricCards({
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
           <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
             <Flame className="w-3.5 h-3.5 text-zinc-400" />
-            Estimasi Energi
+            {m.calories}
           </span>
         </div>
         <div className="flex items-baseline gap-1">
@@ -98,7 +117,7 @@ export default function MetricCards({
           <span className="text-xs sm:text-sm font-semibold text-zinc-400">kcal</span>
         </div>
         <p className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 truncate">
-          Kalori terbakar
+          {m.caloriesSub}
         </p>
       </div>
     </div>
