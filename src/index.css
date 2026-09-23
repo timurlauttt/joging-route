@@ -23,8 +23,10 @@
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #09090b;
-    color: #f4f4f5;
+    background-color: #f8fafc;
+    background-image: radial-gradient(rgba(15, 23, 42, 0.12) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: #0f172a;
     min-height: 100vh;
   }
 
@@ -42,13 +44,46 @@
   }
 }
 
-/* Custom styles for Leaflet elements in dark mode */
+/* Modern Neo-Brutalism (Dev-Centric) Custom Utilities - Pure Light Mode */
+.neo-shadow-sm {
+  box-shadow: 2px 2px 0 #000000;
+}
+
+.neo-shadow {
+  box-shadow: 4px 4px 0 #000000;
+}
+
+.neo-shadow-lg {
+  box-shadow: 6px 6px 0 #000000;
+}
+
+.neo-shadow-xl {
+  box-shadow: 8px 8px 0 #000000;
+}
+
+.neo-shadow-sky {
+  box-shadow: 4px 4px 0 #0284c7;
+}
+
+.neo-btn-tactile {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.neo-btn-tactile:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #000000 !important;
+}
+.neo-btn-tactile:active {
+  transform: translate(2px, 2px);
+  box-shadow: none !important;
+}
+
+/* Custom styles for Leaflet elements in light mode */
 .leaflet-container {
   width: 100% !important;
   max-width: 100% !important;
   height: 100% !important;
   min-height: 460px !important;
-  background: #09090b !important;
+  background: #f1f5f9 !important;
   font-family: inherit;
   z-index: 10;
   display: block;
@@ -62,37 +97,36 @@
 }
 
 .leaflet-tile {
-  /* Prevent inverted or invisible tiles */
-  filter: brightness(0.95) contrast(1.05);
+  filter: contrast(1.02);
 }
 
-/* Dark mode leaflet controls */
+/* Neo-Brutalist Light Mode Leaflet Zoom Controls */
 .leaflet-bar {
-  border: 1px solid rgba(51, 65, 85, 0.6) !important;
-  border-radius: 12px !important;
+  border: 2px solid #000000 !important;
+  border-radius: 8px !important;
   overflow: hidden;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 3px 3px 0 #000000 !important;
 }
 
 .leaflet-bar a {
-  background-color: rgba(15, 23, 42, 0.9) !important;
-  color: #94a3b8 !important;
-  border-bottom: 1px solid rgba(51, 65, 85, 0.6) !important;
-  backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  transition: all 0.15s ease;
 }
 
 .leaflet-bar a:hover {
-  background-color: rgba(30, 41, 59, 0.95) !important;
-  color: #38bdf8 !important;
+  background-color: #fef08a !important;
+  color: #000000 !important;
 }
 
 .leaflet-control-attribution {
-  background: rgba(8, 12, 20, 0.75) !important;
-  color: #64748b !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #475569 !important;
   font-size: 10px !important;
+  border-top: 1px solid #cbd5e1 !important;
+  border-left: 1px solid #cbd5e1 !important;
   border-radius: 6px 0 0 0 !important;
-  backdrop-filter: blur(4px);
   max-width: calc(100vw - 30px) !important;
   white-space: normal !important;
   overflow: hidden !important;
@@ -100,8 +134,9 @@
 }
 
 .leaflet-control-attribution a {
-  color: #38bdf8 !important;
+  color: #0284c7 !important;
   text-decoration: none;
+  font-weight: 600;
 }
 
 /* Modern Athletic Leaflet Markers */

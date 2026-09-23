@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Crosshair, Layers, MapPin, Radio, Navigation, X } from 'lucide-react';
+import { playTactileSound } from '../utils/soundEffects';
 
 /**
  * OnTrack Map Component
@@ -52,7 +53,7 @@ export default function MapRoute({
   const liveMarkerLayerRef = useRef(null);
   const userLocLayerRef = useRef(null);
 
-  const [activeTile, setActiveTile] = useState('dark'); // 'dark' | 'osm'
+  const [activeTile, setActiveTile] = useState('light'); // 'light' | 'osm'
   const [isLocating, setIsLocating] = useState(false);
   const [autoFollow, setAutoFollow] = useState(true);
   const [showLocationPrompt, setShowLocationPrompt] = useState(true);
@@ -72,25 +73,27 @@ export default function MapRoute({
     modeRef.current = mode;
   }, [mode]);
 
-  // Attach Tile Layers (Esri Dark Gray & OSM HOT - Keyless & Watermark-Free)
+  // Attach Tile Layers (Esri Light Gray Canvas & OSM - 100% Keyless, No Watermarks)
   const setTiles = (map, tileType) => {
     if (baseTileRef.current) map.removeLayer(baseTileRef.current);
     if (labelTileRef.current) map.removeLayer(labelTileRef.current);
 
-    if (tileType === 'dark') {
+    if (tileType === 'light') {
       baseTileRef.current = L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
         {
           maxZoom: 19,
+          maxNativeZoom: 16, // Upscale level 16 tiles to prevent 'Map data not yet available'
           attribution: '&copy; Esri, OpenStreetMap contributors',
         }
       ).addTo(map);
 
       labelTileRef.current = L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
         {
           maxZoom: 19,
-          opacity: 0.8,
+          maxNativeZoom: 16,
+          opacity: 0.85,
         }
       ).addTo(map);
     } else {
@@ -98,6 +101,7 @@ export default function MapRoute({
         'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
         {
           maxZoom: 19,
+          maxNativeZoom: 19,
           attribution: '&copy; OpenStreetMap contributors',
         }
       ).addTo(map);
@@ -116,13 +120,14 @@ export default function MapRoute({
     const map = L.map(mapContainerRef.current, {
       center: initialCenter,
       zoom: initialZoom,
+      maxZoom: 19,
       zoomControl: false,
       attributionControl: true,
     });
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    setTiles(map, 'dark');
+    setTiles(map, 'light');
 
     markersLayerRef.current = L.layerGroup().addTo(map);
     routeLayerRef.current = L.layerGroup().addTo(map);
@@ -372,115 +377,147 @@ export default function MapRoute({
   };
 
   return (
-    <div className="relative w-full h-[400px] sm:h-[480px] lg:h-[540px] rounded-xl sm:rounded-2xl overflow-hidden border border-zinc-800 bg-[#090e17]">
-      <div
-        ref={mapContainerRef}
-        className="w-full h-full"
-        style={{ width: '100%', height: '100%' }}
-      />
-
-      {/* GPS PERMISSION PROMPT BANNER */}
-      {showLocationPrompt && (
-        <div className="absolute bottom-12 left-2 right-2 sm:left-auto sm:right-auto sm:left-1/2 sm:-translate-x-1/2 z-[1000] max-w-sm w-auto bg-zinc-900/95 backdrop-blur-md border border-zinc-700 rounded-xl p-2.5 sm:p-3 shadow-xl flex items-center justify-between gap-2 text-left animate-fadeIn">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-300 shrink-0">
-              <Navigation className="w-3.5 h-3.5" />
-            </div>
-            <div className="min-w-0">
-              <h4 className="text-xs font-semibold text-white leading-tight">
-                {m.promptTitle}
-              </h4>
-              <p className="text-[10px] text-zinc-400 leading-tight truncate">
-                {locationNotice || m.promptSub}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={handleRequestLocation}
-              disabled={isLocating}
-              className="px-2.5 py-1 rounded-lg bg-white text-zinc-950 text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-            >
-              {isLocating ? m.seekingBtn : m.allowBtn}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowLocationPrompt(false)}
-              aria-label="Tutup rekomendasi lokasi"
-              className="p-1 text-zinc-400 hover:text-white rounded hover:bg-zinc-800 transition-all cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Route Loading Indicator */}
-      {mode === 'builder' && isLoadingRoute && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-3 py-1.5 bg-zinc-900/95 border border-zinc-700 rounded-full shadow-lg flex items-center gap-2 text-[11px] font-medium text-zinc-200">
-          <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-          <span>{m.snapping}</span>
-        </div>
-      )}
-
-      {/* Empty Waypoint Guide */}
-      {mode === 'builder' && waypoints.length === 0 && !showLocationPrompt && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] pointer-events-none px-3 py-1.5 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-lg flex items-center gap-1.5 text-[11px] font-medium text-zinc-300">
-          <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-          <span>{m.emptyBuilderGuide}</span>
-        </div>
-      )}
-
-      {/* Free Run Banner */}
-      {mode === 'freerun' && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] px-3 py-1.5 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-lg flex items-center gap-2 text-[11px] font-medium text-zinc-200">
-          <Radio className={`w-3 h-3 ${isLiveTracking ? 'text-orange-400 animate-pulse' : 'text-zinc-500'}`} />
-          <span>
-            {isLiveTracking
-              ? `${m.freeRunTracking} (${liveCoordinates.length})`
-              : m.freeRunIdle}
+    <div className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden border-2 sm:border-3 border-black shadow-[6px_6px_0_#000000] bg-white flex flex-col">
+      {/* Window Bar (Header ala OS / GitHub Terminal) */}
+      <div className="bg-slate-100 border-b-2 border-black px-3.5 py-2 flex items-center justify-between text-xs text-slate-700 select-none shrink-0 z-20">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-[#ff5f56] border border-black shadow-sm" />
+          <div className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-black shadow-sm" />
+          <div className="w-3 h-3 rounded-full bg-[#27c93f] border border-black shadow-sm" />
+          <span className="ml-2 font-mono text-slate-900 text-xs font-black tracking-wide flex items-center gap-1.5">
+            <span className="text-sky-700 font-bold">~/ontrack</span>/route-canvas.ts
           </span>
         </div>
-      )}
-
-      {/* Floating Controls Top-Right */}
-      <div className="absolute top-3 right-3 z-[999] flex flex-col gap-1.5">
-        <button
-          type="button"
-          onClick={handleRequestLocation}
-          title={m.locateTitle}
-          className="p-2 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white backdrop-blur-md rounded-xl border border-zinc-700 shadow-md transition-all active:scale-95 flex items-center justify-center cursor-pointer"
-        >
-          <Crosshair className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLocating ? 'animate-spin text-orange-400' : ''}`} />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTile(activeTile === 'dark' ? 'osm' : 'dark')}
-          title={activeTile === 'dark' ? m.layerLight : m.layerDark}
-          className="p-2 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white backdrop-blur-md rounded-xl border border-zinc-700 shadow-md transition-all active:scale-95 flex items-center justify-center cursor-pointer"
-        >
-          <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        </button>
+        <div className="flex items-center gap-2 font-mono text-[10px]">
+          <span className="hidden sm:inline px-2 py-0.5 rounded bg-white border-2 border-black text-slate-900 font-black">
+            {mode === 'builder' ? 'MODE: ROAD_SNAP' : 'MODE: LIVE_GPS'}
+          </span>
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-black animate-pulse" />
+        </div>
       </div>
 
-      {/* Mode & Status Badge Bottom-Left */}
-      <div className="absolute bottom-2 left-2 z-[999] px-2.5 py-1 bg-zinc-950/90 rounded-lg border border-zinc-800 text-[10px] text-zinc-400 flex items-center gap-1.5 font-sans">
-        <span
-          className={`w-1.5 h-1.5 rounded-full ${
-            mode === 'freerun'
-              ? isLiveTracking
-                ? 'bg-orange-400 animate-ping'
-                : 'bg-zinc-500'
-              : 'bg-emerald-400'
-          }`}
+      {/* Map View Canvas Container */}
+      <div className="relative w-full h-[380px] sm:h-[460px] lg:h-[500px]">
+        <div
+          ref={mapContainerRef}
+          className="w-full h-full"
+          style={{ width: '100%', height: '100%' }}
         />
-        <span>
-          {mode === 'freerun'
-            ? `${liveCoordinates.length} GPS pts`
-            : `${waypoints.length} pt`}
-        </span>
+
+        {/* GPS PERMISSION PROMPT BANNER */}
+        {showLocationPrompt && (
+          <div className="absolute bottom-12 left-2 right-2 sm:left-auto sm:right-auto sm:left-1/2 sm:-translate-x-1/2 z-[1000] max-w-sm w-auto bg-amber-100 border-2 border-black rounded-xl p-2.5 sm:p-3 shadow-[4px_4px_0_#000000] flex items-center justify-between gap-2 text-left animate-fadeIn">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded bg-white border-2 border-black flex items-center justify-center text-sky-700 shrink-0">
+                <Navigation className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs font-black font-mono text-slate-950 leading-tight">
+                  {m.promptTitle}
+                </h4>
+                <p className="text-[10px] text-slate-700 font-mono leading-tight truncate">
+                  {locationNotice || m.promptSub}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileSound('action');
+                  handleRequestLocation();
+                }}
+                disabled={isLocating}
+                className="px-2.5 py-1 rounded bg-sky-300 hover:bg-sky-200 text-black text-xs font-black font-mono border-2 border-black shadow-[2px_2px_0_#000000] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer disabled:opacity-50"
+              >
+                {isLocating ? m.seekingBtn : m.allowBtn}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLocationPrompt(false)}
+                aria-label="Tutup rekomendasi lokasi"
+                className="p-1 text-slate-600 hover:text-black rounded border border-black hover:bg-white transition-all cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Route Loading Indicator */}
+        {mode === 'builder' && isLoadingRoute && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-3 py-1.5 bg-white border-2 border-black rounded-lg shadow-[3px_3px_0_#000000] flex items-center gap-2 text-[11px] font-mono font-black text-black">
+            <div className="w-3 h-3 border-2 border-sky-600 border-t-transparent rounded-full animate-spin" />
+            <span>{m.snapping}</span>
+          </div>
+        )}
+
+        {/* Empty Waypoint Guide */}
+        {mode === 'builder' && waypoints.length === 0 && !showLocationPrompt && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] pointer-events-none px-3 py-1.5 bg-white border-2 border-black rounded-lg shadow-[3px_3px_0_#000000] flex items-center gap-1.5 text-[11px] font-mono font-bold text-slate-800">
+            <MapPin className="w-3.5 h-3.5 text-sky-600" />
+            <span>{m.emptyBuilderGuide}</span>
+          </div>
+        )}
+
+        {/* Free Run Banner */}
+        {mode === 'freerun' && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] px-3 py-1.5 bg-white border-2 border-black rounded-lg shadow-[3px_3px_0_#000000] flex items-center gap-2 text-[11px] font-mono font-bold text-black">
+            <Radio className={`w-3.5 h-3.5 ${isLiveTracking ? 'text-orange-600 animate-pulse' : 'text-slate-500'}`} />
+            <span>
+              {isLiveTracking
+                ? `${m.freeRunTracking} (${liveCoordinates.length})`
+                : m.freeRunIdle}
+            </span>
+          </div>
+        )}
+
+        {/* Floating Controls Top-Right */}
+        <div className="absolute top-3 right-3 z-[999] flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              playTactileSound('click');
+              handleRequestLocation();
+            }}
+            title={m.locateTitle}
+            className="p-2 bg-white hover:bg-slate-100 text-black rounded-lg border-2 border-black shadow-[3px_3px_0_#000000] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center justify-center cursor-pointer"
+          >
+            <Crosshair className={`w-4 h-4 ${isLocating ? 'animate-spin text-orange-600' : 'text-sky-700'}`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              playTactileSound('click');
+              const nextTile = activeTile === 'light' ? 'osm' : 'light';
+              setActiveTile(nextTile);
+              if (mapInstanceRef.current) setTiles(mapInstanceRef.current, nextTile);
+            }}
+            title={activeTile === 'light' ? 'Ganti ke OpenStreetMap' : 'Ganti ke Minimalist Canvas'}
+            className="p-2 bg-white hover:bg-slate-100 text-black rounded-lg border-2 border-black shadow-[3px_3px_0_#000000] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center justify-center cursor-pointer"
+          >
+            <Layers className="w-4 h-4 text-emerald-700" />
+          </button>
+        </div>
+
+        {/* Mode & Status Badge Bottom-Left */}
+        <div className="absolute bottom-2.5 left-2.5 z-[999] px-2.5 py-1 bg-white rounded-lg border-2 border-black text-[10px] text-black font-mono font-black shadow-[2px_2px_0_#000000] flex items-center gap-2">
+          <span
+            className={`w-2 h-2 rounded-full ${
+              mode === 'freerun'
+                ? isLiveTracking
+                  ? 'bg-orange-500 animate-ping'
+                  : 'bg-slate-400'
+                : 'bg-emerald-500'
+            }`}
+          />
+          <span>
+            {mode === 'freerun'
+              ? `${liveCoordinates.length} GPS pts`
+              : `${waypoints.length} pt`}
+          </span>
+        </div>
       </div>
     </div>
   );

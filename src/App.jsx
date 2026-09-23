@@ -417,7 +417,7 @@ export default function App() {
   }, [mode, stopGpsTracking, releaseWakeLock]);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col selection:bg-zinc-800 selection:text-white w-full max-w-full overflow-x-hidden relative">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col selection:bg-amber-300 selection:text-black w-full max-w-full overflow-x-hidden relative">
       {/* Top Navigation Bar with Mode Switcher & Wake Lock indicator & Language Toggle */}
       <Navbar
         mode={mode}
@@ -443,7 +443,7 @@ export default function App() {
         />
 
         {/* Map View & Route Canvas */}
-        <div className="w-full max-w-full relative rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+        <div className="w-full max-w-full relative flex flex-col">
           <MapRoute
             mode={mode}
             waypoints={waypoints}
@@ -475,41 +475,40 @@ export default function App() {
         />
 
         {/* Footer: Quick Instructions, Privacy & Guide, Developer Credit */}
-        <footer className="flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 px-1 py-1 gap-2.5 border-t border-zinc-900/80 pt-2.5">
-          <div className="flex items-center gap-2 text-center sm:text-left">
-            <span>
+        <footer className="flex flex-col sm:flex-row items-center justify-between text-xs text-slate-700 px-1 py-1 gap-2.5 border-t-2 border-black pt-3">
+          <div className="flex items-center gap-2 text-center sm:text-left font-mono text-[11px] sm:text-xs">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 border border-black shadow-[1px_1px_0_#000000]" />
+            <span className="text-slate-800 font-semibold">
               {mode === 'builder' ? t.footer.builderHint : t.footer.freeRunHint}
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 text-[11px] text-zinc-500">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 text-[11px] font-mono">
             {/* Guide & Privacy Trigger */}
             <button
               type="button"
               onClick={() => setIsInfoModalOpen(true)}
-              className="text-zinc-400 hover:text-white transition-colors underline-offset-2 hover:underline cursor-pointer font-medium"
+              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-900 border-2 border-black rounded shadow-[2px_2px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer font-bold"
             >
               {t.footer.guideAndPrivacy}
             </button>
 
-            <span className="text-zinc-700">&bull;</span>
-
             {/* Developer Credit Link to pangestudev.web.id */}
-            <div className="flex items-center gap-1 text-zinc-400">
-              <span>{t.footer.craftedBy}</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white border-2 border-black rounded shadow-[2px_2px_0_#000000] text-slate-800">
+              <span className="text-slate-600">{t.footer.craftedBy}</span>
               <a
                 href="https://pangestudev.web.id"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold text-zinc-200 hover:text-orange-400 transition-colors underline-offset-2 hover:underline inline-flex items-center gap-0.5"
+                className="font-black text-orange-600 hover:text-orange-500 transition-colors inline-flex items-center gap-0.5"
               >
                 <span>{t.footer.developerName}</span>
               </a>
             </div>
 
-            <span className="text-zinc-700">&bull;</span>
-
-            <span className="text-zinc-600">{t.footer.version}</span>
+            <span className="px-2 py-0.5 bg-slate-200 text-slate-700 border-2 border-black rounded text-[10px] font-bold">
+              {t.footer.version}
+            </span>
           </div>
         </footer>
       </main>

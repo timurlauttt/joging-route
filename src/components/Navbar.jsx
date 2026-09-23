@@ -1,4 +1,5 @@
 import { Compass, Languages, MapPin, Radio, Sun } from 'lucide-react';
+import { playTactileSound } from '../utils/soundEffects';
 
 export default function Navbar({
   mode,
@@ -22,24 +23,30 @@ export default function Navbar({
   };
 
   return (
-    <header className="w-full max-w-full bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-800/70 sticky top-0 z-40 overflow-x-hidden">
+    <header className="w-full max-w-full bg-white border-b-2 sm:border-b-3 border-black sticky top-0 z-40 overflow-x-hidden shadow-[0_4px_0_#000000]">
       <div className="max-w-7xl mx-auto px-2.5 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-1.5 sm:gap-4 overflow-x-hidden min-w-0">
-        {/* Brand Logo & Name */}
+        {/* Brand Logo & Name: Retro Dev-Centric Monospace in Light Mode */}
         <div className="flex items-center shrink-0">
-          <h1 className="text-sm sm:text-lg font-black tracking-tight text-white font-sans m-0 p-0 leading-none">
-            OnTrack<span className="text-orange-500">.</span>
-          </h1>
+          <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded bg-amber-300 border-2 border-black shadow-[2px_2px_0_#000000]">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-black shrink-0" />
+            <h1 className="text-xs sm:text-sm font-black font-mono tracking-tight text-black m-0 p-0 leading-none">
+              &lt;OnTrack /&gt;
+            </h1>
+          </div>
         </div>
 
-        {/* Mode Switcher Tabs (Clean Athletic Segmented Pill) */}
-        <div className="flex items-center bg-zinc-900/90 p-0.5 sm:p-1 rounded-xl border border-zinc-800 shrink-0">
+        {/* Mode Switcher Tabs (Neo-Brutalist Segmented Tabs with Hard Shadow) */}
+        <div className="flex items-center bg-slate-100 p-0.5 sm:p-1 rounded border-2 border-black shadow-[2px_2px_0_#000000] shrink-0">
           <button
             type="button"
-            onClick={() => setMode('builder')}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all cursor-pointer ${
+            onClick={() => {
+              playTactileSound('switch');
+              setMode('builder');
+            }}
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded text-[11px] sm:text-xs font-black font-mono transition-all duration-150 cursor-pointer ${
               mode === 'builder'
-                ? 'bg-zinc-800 text-white shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-sky-300 text-black border-2 border-black shadow-[1px_1px_0_#000000]'
+                : 'text-slate-700 hover:text-black hover:bg-slate-200 border-2 border-transparent'
             }`}
           >
             <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -48,16 +55,19 @@ export default function Navbar({
 
           <button
             type="button"
-            onClick={() => setMode('freerun')}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all cursor-pointer ${
+            onClick={() => {
+              playTactileSound('switch');
+              setMode('freerun');
+            }}
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded text-[11px] sm:text-xs font-black font-mono transition-all duration-150 cursor-pointer ${
               mode === 'freerun'
-                ? 'bg-zinc-800 text-white shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-orange-300 text-black border-2 border-black shadow-[1px_1px_0_#000000]'
+                : 'text-slate-700 hover:text-black hover:bg-slate-200 border-2 border-transparent'
             }`}
           >
             <Radio
               className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${
-                mode === 'freerun' && isRunning ? 'text-orange-400 animate-pulse' : ''
+                mode === 'freerun' && isRunning ? 'text-black animate-pulse' : ''
               }`}
             />
             <span>{nav.freeRun}</span>
@@ -65,31 +75,37 @@ export default function Navbar({
         </div>
 
         {/* Right Section: Language Toggle & Status Indicators */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Language Toggle Switch [ ID | EN ] */}
-          <div className="flex items-center gap-1 bg-zinc-900/90 pl-1.5 sm:pl-2 pr-1 py-1 rounded-xl border border-zinc-800">
-            <Languages className="w-3.5 h-3.5 text-zinc-400 shrink-0 hidden md:inline" />
-            <div className="flex items-center bg-zinc-950 p-0.5 rounded-lg border border-zinc-800">
+          <div className="flex items-center gap-1 bg-white pl-1.5 sm:pl-2 pr-1 py-1 rounded border-2 border-black shadow-[2px_2px_0_#000000]">
+            <Languages className="w-3.5 h-3.5 text-slate-700 shrink-0 hidden md:inline" />
+            <div className="flex items-center bg-slate-100 p-0.5 rounded border border-black">
               <button
                 type="button"
-                onClick={() => setLang('id')}
+                onClick={() => {
+                  playTactileSound('click');
+                  setLang('id');
+                }}
                 aria-label="Bahasa Indonesia"
-                className={`min-w-[26px] min-h-[26px] px-1.5 sm:px-2 py-0.5 rounded text-[10px] font-bold tracking-wider transition-all cursor-pointer flex items-center justify-center ${
+                className={`min-w-[26px] min-h-[24px] px-1.5 sm:px-2 py-0.5 rounded text-[10px] font-black font-mono transition-all cursor-pointer flex items-center justify-center ${
                   lang === 'id'
-                    ? 'bg-zinc-800 text-white shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-300'
+                    ? 'bg-amber-300 text-black border border-black shadow-sm'
+                    : 'text-slate-700 hover:text-black'
                 }`}
               >
                 ID
               </button>
               <button
                 type="button"
-                onClick={() => setLang('en')}
+                onClick={() => {
+                  playTactileSound('click');
+                  setLang('en');
+                }}
                 aria-label="English"
-                className={`min-w-[26px] min-h-[26px] px-1.5 sm:px-2 py-0.5 rounded text-[10px] font-bold tracking-wider transition-all cursor-pointer flex items-center justify-center ${
+                className={`min-w-[26px] min-h-[24px] px-1.5 sm:px-2 py-0.5 rounded text-[10px] font-black font-mono transition-all cursor-pointer flex items-center justify-center ${
                   lang === 'en'
-                    ? 'bg-zinc-800 text-white shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-300'
+                    ? 'bg-amber-300 text-black border border-black shadow-sm'
+                    : 'text-slate-700 hover:text-black'
                 }`}
               >
                 EN
@@ -100,35 +116,35 @@ export default function Navbar({
           {isWakeLockActive && (
             <div
               title={lang === 'en' ? 'Screen kept awake' : 'Layar HP dijaga tetap aktif'}
-              className="flex items-center gap-1 p-1 sm:px-2 sm:py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-[11px] font-medium"
+              className="flex items-center gap-1 p-1 sm:px-2 sm:py-1 rounded bg-amber-100 border-2 border-black text-amber-950 text-[11px] font-mono font-bold shadow-[2px_2px_0_#000000]"
             >
-              <Sun className="w-3 h-3 text-amber-400 shrink-0" />
+              <Sun className="w-3 h-3 text-amber-600 shrink-0" />
               <span className="hidden md:inline">{nav.wakeLock}</span>
             </div>
           )}
 
           {isRunning ? (
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-ping" />
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded bg-orange-100 border-2 border-black text-orange-950 text-xs font-mono font-black shadow-[2px_2px_0_#000000]">
+              <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
               <span>{nav.tracking}</span>
             </div>
           ) : mode === 'builder' && waypointsCount > 0 ? (
-            <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium">
-              <Compass className="w-3.5 h-3.5 text-zinc-400" />
+            <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded bg-sky-100 border-2 border-black text-sky-950 text-xs font-mono font-bold shadow-[2px_2px_0_#000000]">
+              <Compass className="w-3.5 h-3.5 text-sky-700" />
               <span>
                 {waypointsCount} {nav.points}
               </span>
             </div>
           ) : mode === 'freerun' && liveCoordinatesCount > 0 ? (
-            <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium">
-              <Radio className="w-3.5 h-3.5 text-zinc-400" />
+            <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-100 border-2 border-black text-emerald-950 text-xs font-mono font-bold shadow-[2px_2px_0_#000000]">
+              <Radio className="w-3.5 h-3.5 text-emerald-700" />
               <span>
                 {liveCoordinatesCount} {nav.gps}
               </span>
             </div>
           ) : (
-            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-100 border-2 border-black text-slate-700 text-xs font-mono font-bold shadow-[2px_2px_0_#000000]">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
               <span>{nav.standby}</span>
             </div>
           )}
