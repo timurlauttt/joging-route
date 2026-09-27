@@ -4,7 +4,6 @@
 [![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Leaflet](https://img.shields.io/badge/Leaflet-1.9-199900?style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![Portfolio](https://img.shields.io/badge/Developer-pangestudev.web.id-f97316?style=for-the-badge&logo=safari&logoColor=white)](https://pangestudev.web.id)
 
 > **OnTrack** is a high-performance, dark-mode athletic running tracker and road-route planner built with **React 19** and **Tailwind CSS**. Designed with an uncompromising focus on **user privacy**, it operates **100% client-side** with zero backend databases, zero telemetry, and zero paywalled API keys.
@@ -178,4 +177,4 @@ Crafted with passion for clean code, web standards, and runner ergonomics by **p
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE) — free for personal, educational, and commercial exploration.
+This project is free for personal, educational, and commercial exploration.
