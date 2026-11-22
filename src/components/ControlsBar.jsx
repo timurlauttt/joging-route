@@ -1,12 +1,24 @@
-import { Play, Pause, RotateCcw, Undo2, Trash2, Share2, Radio, Volume2, VolumeX } from 'lucide-react';
-import { playTactileSound } from '../utils/soundEffects';
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Undo2,
+  Trash2,
+  Share2,
+  Radio,
+  Bike,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
+import { playTactileSound } from "../utils/soundEffects";
 
 /**
  * Bottom Control Bar for Route actions, Stopwatch controls & Share trigger
  * Modern Neo-Brutalism (Dev-Centric) styling with tactile physics and zero-blur hard shadows
  */
 export default function ControlsBar({
-  mode = 'builder',
+  mode = "builder",
+  activity = "run",
   isRunning,
   timerSeconds,
   waypointsCount,
@@ -22,23 +34,24 @@ export default function ControlsBar({
   t,
 }) {
   const c = t?.controls || {
-    undo: 'Undo',
-    undoTitle: 'Hapus titik terakhir',
-    reset: 'Reset',
-    resetTitle: 'Hapus semua rute',
-    resetGps: 'Reset GPS',
-    start: 'Mulai',
-    pause: 'Jeda',
-    resetTimerTitle: 'Reset Stopwatch',
-    share: 'Share',
-    shareTitle: 'Bagikan hasil lari',
-    voiceCueTitleOn: 'Matikan audio arahan suara',
-    voiceCueTitleOff: 'Nyalakan audio arahan suara',
+    undo: "Undo",
+    undoTitle: "Hapus titik terakhir",
+    reset: "Reset",
+    resetTitle: "Hapus semua rute",
+    resetGps: "Reset GPS",
+    start: "Mulai",
+    pause: "Jeda",
+    resetTimerTitle: "Reset Stopwatch",
+    share: "Share",
+    shareTitle: "Bagikan hasil lari",
+    voiceCueTitleOn: "Matikan audio arahan suara",
+    voiceCueTitleOff: "Nyalakan audio arahan suara",
   };
 
-  const hasRouteData = mode === 'builder' ? waypointsCount > 0 : liveCoordinatesCount > 0;
+  const hasRouteData =
+    mode === "builder" ? waypointsCount > 0 : liveCoordinatesCount > 0;
 
-  const handleAction = (cb, soundType = 'click') => {
+  const handleAction = (cb, soundType = "click") => {
     return (e) => {
       playTactileSound(soundType);
       if (cb) cb(e);
@@ -49,11 +62,11 @@ export default function ControlsBar({
     <div className="w-full max-w-full bg-white border-2 border-black rounded-xl sm:rounded-2xl p-2 sm:p-3 shadow-[6px_6px_0_#000000] flex items-center justify-between gap-1.5 sm:gap-3 overflow-x-hidden min-w-0 transition-colors">
       {/* Route editing actions */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-        {mode === 'builder' ? (
+        {mode === "builder" ? (
           <>
             <button
               type="button"
-              onClick={handleAction(onUndoWaypoint, 'click')}
+              onClick={handleAction(onUndoWaypoint, "click")}
               disabled={waypointsCount === 0}
               title={c.undoTitle}
               className="p-1.5 sm:px-3 sm:py-2 text-xs font-mono font-black rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-900 border-2 border-black shadow-[3px_3px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5"
@@ -64,7 +77,7 @@ export default function ControlsBar({
 
             <button
               type="button"
-              onClick={handleAction(onClearRoute, 'action')}
+              onClick={handleAction(onClearRoute, "action")}
               disabled={waypointsCount === 0}
               title={c.resetTitle}
               className="p-1.5 sm:px-3 sm:py-2 text-xs font-mono font-black rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-900 hover:text-rose-600 border-2 border-black shadow-[3px_3px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5"
@@ -76,7 +89,7 @@ export default function ControlsBar({
         ) : (
           <button
             type="button"
-            onClick={handleAction(onClearRoute, 'action')}
+            onClick={handleAction(onClearRoute, "action")}
             disabled={liveCoordinatesCount === 0 && timerSeconds === 0}
             title={c.resetGps}
             className="p-1.5 sm:px-3 sm:py-2 text-xs font-mono font-black rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-900 hover:text-rose-600 border-2 border-black shadow-[3px_3px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5"
@@ -92,15 +105,19 @@ export default function ControlsBar({
         {!isRunning ? (
           <button
             type="button"
-            onClick={handleAction(onStartTimer, 'action')}
+            onClick={handleAction(onStartTimer, "action")}
             className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-mono font-black text-xs border-2 border-black shadow-[3px_3px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer ${
-              mode === 'freerun'
-                ? 'bg-sky-300 hover:bg-sky-200 text-black'
-                : 'bg-emerald-400 hover:bg-emerald-300 text-black'
+              mode === "freerun"
+                ? "bg-sky-300 hover:bg-sky-200 text-black"
+                : "bg-emerald-400 hover:bg-emerald-300 text-black"
             }`}
           >
-            {mode === 'freerun' ? (
-              <Radio className="w-3.5 h-3.5 animate-pulse" />
+            {mode === "freerun" ? (
+              activity === "ride" ? (
+                <Bike className="w-3.5 h-3.5 animate-pulse" />
+              ) : (
+                <Radio className="w-3.5 h-3.5 animate-pulse" />
+              )
             ) : (
               <Play className="w-3.5 h-3.5 fill-current" />
             )}
@@ -109,7 +126,7 @@ export default function ControlsBar({
         ) : (
           <button
             type="button"
-            onClick={handleAction(onPauseTimer, 'action')}
+            onClick={handleAction(onPauseTimer, "action")}
             className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-black border-2 border-black font-mono font-black text-xs shadow-[3px_3px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
           >
             <Pause className="w-3.5 h-3.5 fill-current" />
@@ -119,7 +136,7 @@ export default function ControlsBar({
 
         <button
           type="button"
-          onClick={handleAction(onResetTimer, 'click')}
+          onClick={handleAction(onResetTimer, "click")}
           disabled={timerSeconds === 0 && !isRunning}
           title={c.resetTimerTitle}
           className="p-1.5 sm:p-2 rounded-lg text-slate-800 hover:text-black hover:bg-slate-200 border border-transparent hover:border-black disabled:opacity-20 disabled:pointer-events-none transition-all cursor-pointer"
@@ -132,12 +149,12 @@ export default function ControlsBar({
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <button
           type="button"
-          onClick={handleAction(onToggleVoiceCue, 'switch')}
+          onClick={handleAction(onToggleVoiceCue, "switch")}
           title={isVoiceCueEnabled ? c.voiceCueTitleOn : c.voiceCueTitleOff}
           className={`p-1.5 sm:px-2.5 sm:py-2 text-xs font-mono font-black rounded-lg border-2 border-black shadow-[3px_3px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer flex items-center gap-1 ${
             isVoiceCueEnabled
-              ? 'bg-amber-300 text-black'
-              : 'bg-slate-100 text-slate-500'
+              ? "bg-amber-300 text-black"
+              : "bg-slate-100 text-slate-500"
           }`}
         >
           {isVoiceCueEnabled ? (
@@ -149,7 +166,7 @@ export default function ControlsBar({
 
         <button
           type="button"
-          onClick={handleAction(onOpenShareModal, 'action')}
+          onClick={handleAction(onOpenShareModal, "action")}
           disabled={!hasRouteData && timerSeconds === 0}
           title={c.shareTitle}
           className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-orange-400 hover:bg-orange-300 text-black border-2 border-black text-xs font-mono font-black shadow-[3px_3px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
@@ -161,4 +178,3 @@ export default function ControlsBar({
     </div>
   );
 }
-

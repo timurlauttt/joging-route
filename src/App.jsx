@@ -1,24 +1,34 @@
-import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
-import Navbar from './components/Navbar';
-import MapRoute from './components/MapRoute';
-import MetricCards from './components/MetricCards';
-import ControlsBar from './components/ControlsBar';
-import { fetchWalkingRoute, haversineDistance } from './utils/osrm';
-import { calculatePace } from './utils/formatters';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  lazy,
+  Suspense,
+} from "react";
+import Navbar from "./components/Navbar";
+import MapRoute from "./components/MapRoute";
+import MetricCards from "./components/MetricCards";
+import ControlsBar from "./components/ControlsBar";
+import { fetchRoute, haversineDistance } from "./utils/routing";
+import { calculatePace } from "./utils/formatters";
 
-const ShareModal = lazy(() => import('./components/ShareModal'));
-const InfoModal = lazy(() => import('./components/InfoModal'));
-import { translations } from './utils/translations';
-import { startBackgroundAudio, stopBackgroundAudio } from './utils/backgroundAudio';
-import { speakKilometerSplit } from './utils/audioCues';
+const ShareModal = lazy(() => import("./components/ShareModal"));
+const InfoModal = lazy(() => import("./components/InfoModal"));
+import { translations } from "./utils/translations";
+import {
+  startBackgroundAudio,
+  stopBackgroundAudio,
+} from "./utils/backgroundAudio";
+import { speakKilometerSplit } from "./utils/audioCues";
 
 export default function App() {
   // Localization: 'id' | 'en' (stored in localStorage)
   const [lang, setLang] = useState(() => {
     try {
-      return localStorage.getItem('ontrack_lang') || 'id';
+      return localStorage.getItem("ontrack_lang") || "id";
     } catch {
-      return 'id';
+      return "id";
     }
   });
 
@@ -26,7 +36,7 @@ export default function App() {
     langRef.current = newLang;
     setLang(newLang);
     try {
-      localStorage.setItem('ontrack_lang', newLang);
+      localStorage.setItem("ontrack_lang", newLang);
     } catch {
       // Ignore localStorage errors
     }
@@ -35,7 +45,30 @@ export default function App() {
   const t = translations[lang] || translations.id;
 
   // Tracking Mode: 'builder' (manual waypoint snapping) vs 'freerun' (live GPS tracking)
-  const [mode, setMode] = useState('builder');
+  const [mode, setMode] = useState("builder");
+
+  // Activity: 'run' | 'ride' (persisted). Drives routing profile, metrics & map style.
+  const [activity, setActivity] = useState(() => {
+    try {
+      return localStorage.getItem("ontrack_activity") === "ride"
+        ? "ride"
+        : "run";
+    } catch {
+      return "run";
+    }
+  });
+
+  const activityRef = useRef(activity);
+
+  const handleActivityChange = useCallback((next) => {
+    activityRef.current = next;
+    setActivity(next);
+    try {
+      localStorage.setItem("ontrack_activity", next);
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, []);
 
   // Route Builder state
   const [waypoints, setWaypoints] = useState([]);
@@ -58,8 +91,8 @@ export default function App() {
   // Voice Audio Cues state (persisted in localStorage)
   const [isVoiceCueEnabled, setIsVoiceCueEnabled] = useState(() => {
     try {
-      const saved = localStorage.getItem('ontrack_voice_cues');
-      return saved !== null ? saved === 'true' : true;
+      const saved = localStorage.getItem("ontrack_voice_cues");
+      return saved !== null ? saved === "true" : true;
     } catch {
       return true;
     }
@@ -70,7 +103,7 @@ export default function App() {
       const next = !prev;
       isVoiceCueEnabledRef.current = next;
       try {
-        localStorage.setItem('ontrack_voice_cues', String(next));
+        localStorage.setItem("ontrack_voice_cues", String(next));
       } catch {
         // Ignore localStorage error
       }
@@ -87,16 +120,17 @@ export default function App() {
   const langRef = useRef(lang);
 
   // Active metrics based on mode
-  const activeDistance = mode === 'freerun' ? liveDistanceMeters : distanceMeters;
+  const activeDistance =
+    mode === "freerun" ? liveDistanceMeters : distanceMeters;
   const activeCoordinates =
-    mode === 'freerun'
+    mode === "freerun"
       ? liveCoordinates.map((c) => [c.lng, c.lat])
       : routeGeojson?.coordinates || [];
 
   // Info & Privacy Modal state (automatically shown once on first visit)
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(() => {
     try {
-      return !localStorage.getItem('ontrack_guide_seen');
+      return !localStorage.getItem("ontrack_guide_seen");
     } catch {
       return false;
     }
@@ -105,7 +139,7 @@ export default function App() {
   const handleCloseInfoModal = useCallback(() => {
     setIsInfoModalOpen(false);
     try {
-      localStorage.setItem('ontrack_guide_seen', 'true');
+      localStorage.setItem("ontrack_guide_seen", "true");
     } catch {
       // Ignore localStorage errors
     }
@@ -121,16 +155,16 @@ export default function App() {
 
   // Screen Wake Lock API handler
   const requestWakeLock = useCallback(async () => {
-    if ('wakeLock' in navigator) {
+    if ("wakeLock" in navigator) {
       try {
-        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        wakeLockRef.current = await navigator.wakeLock.request("screen");
         setIsWakeLockActive(true);
-        wakeLockRef.current.addEventListener('release', () => {
+        wakeLockRef.current.addEventListener("release", () => {
           setIsWakeLockActive(false);
           wakeLockRef.current = null;
         });
       } catch (err) {
-        console.warn('Screen Wake Lock request failed:', err);
+        console.warn("Screen Wake Lock request failed:", err);
       }
     }
   }, []);
@@ -140,7 +174,7 @@ export default function App() {
       try {
         await wakeLockRef.current.release();
       } catch (err) {
-        console.warn('Screen Wake Lock release failed:', err);
+        console.warn("Screen Wake Lock release failed:", err);
       }
       wakeLockRef.current = null;
       setIsWakeLockActive(false);
@@ -150,28 +184,29 @@ export default function App() {
   // Re-acquire wake lock and instantaneously resync stopwatch on visibility change or focus
   useEffect(() => {
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && isRunning) {
+      if (document.visibilityState === "visible" && isRunning) {
         if (startTimeRef.current) {
-          const elapsedMs = accumulatedTimeRef.current + (Date.now() - startTimeRef.current);
+          const elapsedMs =
+            accumulatedTimeRef.current + (Date.now() - startTimeRef.current);
           setTimerSeconds(Math.floor(elapsedMs / 1000));
         }
-        if (mode === 'freerun') {
+        if (mode === "freerun") {
           await requestWakeLock();
         }
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleVisibilityChange);
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleVisibilityChange);
     };
   }, [isRunning, mode, requestWakeLock]);
 
   // GPS watchPosition start & stop helpers
   const startGpsTracking = useCallback(() => {
     if (!navigator.geolocation) {
-      alert('Geolokasi tidak didukung oleh browser Anda.');
+      alert("Geolokasi tidak didukung oleh browser Anda.");
       return;
     }
 
@@ -211,13 +246,21 @@ export default function App() {
             const currentCompletedKm = Math.floor(nextDist / 1000);
             if (currentCompletedKm > lastSplitKmRef.current) {
               const elapsedMs = startTimeRef.current
-                ? accumulatedTimeRef.current + (Date.now() - startTimeRef.current)
+                ? accumulatedTimeRef.current +
+                  (Date.now() - startTimeRef.current)
                 : 0;
               const currentSeconds = Math.floor(elapsedMs / 1000);
 
               const newSplits = [];
-              for (let k = lastSplitKmRef.current + 1; k <= currentCompletedKm; k++) {
-                const lapSeconds = Math.max(1, currentSeconds - lastSplitTimeRef.current);
+              for (
+                let k = lastSplitKmRef.current + 1;
+                k <= currentCompletedKm;
+                k++
+              ) {
+                const lapSeconds = Math.max(
+                  1,
+                  currentSeconds - lastSplitTimeRef.current,
+                );
                 const paceStr = calculatePace(lapSeconds, 1000);
                 newSplits.push({
                   km: k,
@@ -229,7 +272,12 @@ export default function App() {
                 lastSplitKmRef.current = k;
 
                 if (isVoiceCueEnabledRef.current) {
-                  speakKilometerSplit(k, lapSeconds, langRef.current);
+                  speakKilometerSplit(
+                    k,
+                    lapSeconds,
+                    langRef.current,
+                    activityRef.current,
+                  );
                 }
               }
 
@@ -246,10 +294,14 @@ export default function App() {
     };
 
     const error = (err) => {
-      console.warn('Geolocation watchPosition error:', err.message);
+      console.warn("Geolocation watchPosition error:", err.message);
     };
 
-    watchIdRef.current = navigator.geolocation.watchPosition(success, error, options);
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      success,
+      error,
+      options,
+    );
   }, []);
 
   const stopGpsTracking = useCallback(() => {
@@ -265,7 +317,8 @@ export default function App() {
     if (isRunning) {
       interval = setInterval(() => {
         if (startTimeRef.current) {
-          const elapsedMs = accumulatedTimeRef.current + (Date.now() - startTimeRef.current);
+          const elapsedMs =
+            accumulatedTimeRef.current + (Date.now() - startTimeRef.current);
           setTimerSeconds(Math.floor(elapsedMs / 1000));
         }
       }, 500);
@@ -284,9 +337,9 @@ export default function App() {
     };
   }, [stopGpsTracking, releaseWakeLock]);
 
-  // Route calculation effect with OSRM (Only in 'builder' mode)
+  // Route calculation effect (Only in 'builder' mode)
   useEffect(() => {
-    if (mode !== 'builder') return;
+    if (mode !== "builder") return;
 
     let isMounted = true;
 
@@ -308,13 +361,13 @@ export default function App() {
       if (!isMounted) return;
       setIsLoadingRoute(true);
       try {
-        const result = await fetchWalkingRoute(waypoints);
+        const result = await fetchRoute(waypoints, activity);
         if (isMounted) {
           setRouteGeojson(result.geojson);
           setDistanceMeters(result.distance);
         }
       } catch (err) {
-        console.error('Failed to compute walking route:', err);
+        console.error("Failed to compute route:", err);
       } finally {
         if (isMounted) {
           setIsLoadingRoute(false);
@@ -326,7 +379,7 @@ export default function App() {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [waypoints, mode]);
+  }, [waypoints, mode, activity]);
 
   // Waypoint manipulation handlers (Route Builder)
   const handleAddWaypoint = useCallback((newPt) => {
@@ -349,7 +402,7 @@ export default function App() {
     lastSplitKmRef.current = 0;
     lastSplitTimeRef.current = 0;
     liveDistanceMetersRef.current = 0;
-    if (mode === 'builder') {
+    if (mode === "builder") {
       setWaypoints([]);
       setRouteGeojson(null);
       setDistanceMeters(0);
@@ -359,27 +412,30 @@ export default function App() {
     }
   }, [mode]);
 
-  const handleModeChange = useCallback((newMode) => {
-    if (newMode === mode) return;
-    if (isRunning) {
-      if (startTimeRef.current) {
-        accumulatedTimeRef.current += Date.now() - startTimeRef.current;
-        startTimeRef.current = null;
+  const handleModeChange = useCallback(
+    (newMode) => {
+      if (newMode === mode) return;
+      if (isRunning) {
+        if (startTimeRef.current) {
+          accumulatedTimeRef.current += Date.now() - startTimeRef.current;
+          startTimeRef.current = null;
+        }
+        setIsRunning(false);
+        stopBackgroundAudio();
+        stopGpsTracking();
+        releaseWakeLock();
       }
-      setIsRunning(false);
-      stopBackgroundAudio();
-      stopGpsTracking();
-      releaseWakeLock();
-    }
-    setMode(newMode);
-  }, [mode, isRunning, stopGpsTracking, releaseWakeLock]);
+      setMode(newMode);
+    },
+    [mode, isRunning, stopGpsTracking, releaseWakeLock],
+  );
 
   // Timer handlers
   const handleStartTimer = useCallback(() => {
     startTimeRef.current = Date.now();
     setIsRunning(true);
     startBackgroundAudio();
-    if (mode === 'freerun') {
+    if (mode === "freerun") {
       startGpsTracking();
       requestWakeLock();
     }
@@ -392,7 +448,7 @@ export default function App() {
     }
     setIsRunning(false);
     stopBackgroundAudio();
-    if (mode === 'freerun') {
+    if (mode === "freerun") {
       stopGpsTracking();
       releaseWakeLock();
     }
@@ -408,7 +464,7 @@ export default function App() {
     lastSplitTimeRef.current = 0;
     liveDistanceMetersRef.current = 0;
     stopBackgroundAudio();
-    if (mode === 'freerun') {
+    if (mode === "freerun") {
       stopGpsTracking();
       releaseWakeLock();
       setLiveCoordinates([]);
@@ -422,6 +478,8 @@ export default function App() {
       <Navbar
         mode={mode}
         setMode={handleModeChange}
+        activity={activity}
+        setActivity={handleActivityChange}
         waypointsCount={waypoints.length}
         liveCoordinatesCount={liveCoordinates.length}
         isRunning={isRunning}
@@ -436,6 +494,7 @@ export default function App() {
         {/* Metric Cards Top Row */}
         <MetricCards
           mode={mode}
+          activity={activity}
           distanceMeters={activeDistance}
           timerSeconds={timerSeconds}
           isRunning={isRunning}
@@ -446,10 +505,11 @@ export default function App() {
         <div className="w-full max-w-full relative flex flex-col">
           <MapRoute
             mode={mode}
+            activity={activity}
             waypoints={waypoints}
             routeGeojson={routeGeojson}
             liveCoordinates={liveCoordinates}
-            isLiveTracking={isRunning && mode === 'freerun'}
+            isLiveTracking={isRunning && mode === "freerun"}
             isLoadingRoute={isLoadingRoute}
             onAddWaypoint={handleAddWaypoint}
             t={t}
@@ -459,6 +519,7 @@ export default function App() {
         {/* Controls Bar (Undo, Reset, Stopwatch, Share, Voice Cue) */}
         <ControlsBar
           mode={mode}
+          activity={activity}
           isRunning={isRunning}
           timerSeconds={timerSeconds}
           waypointsCount={waypoints.length}
@@ -479,7 +540,7 @@ export default function App() {
           <div className="flex items-center gap-2 text-center sm:text-left font-mono text-[11px] sm:text-xs">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 border border-black shadow-[1px_1px_0_#000000]" />
             <span className="text-slate-800 font-semibold">
-              {mode === 'builder' ? t.footer.builderHint : t.footer.freeRunHint}
+              {mode === "builder" ? t.footer.builderHint : t.footer.freeRunHint}
             </span>
           </div>
 
@@ -519,6 +580,7 @@ export default function App() {
           <ShareModal
             isOpen={isShareModalOpen}
             onClose={() => setIsShareModalOpen(false)}
+            activity={activity}
             distanceMeters={activeDistance}
             timerSeconds={timerSeconds}
             routeCoordinates={activeCoordinates}
