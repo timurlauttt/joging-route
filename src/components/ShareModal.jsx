@@ -65,6 +65,7 @@ export default function ShareModal({
   timerSeconds,
   routeCoordinates,
   splits = [],
+  elevationData = null,
   lang = "id",
   t,
 }) {
@@ -93,6 +94,8 @@ export default function ShareModal({
     time: "WAKTU",
     pace: "PACE",
     speed: "KECEPATAN",
+    avgSpeed: "KECEPATAN RATA-RATA",
+    elevation: "ELEVASI",
     calories: "KALORI",
     defaultTitleMorning: "Lari Pagi",
     defaultTitleLunch: "Lari Siang",
@@ -108,6 +111,8 @@ export default function ShareModal({
       "Recovery",
     ],
     shareText: "🏃 {title}: {distance} dalam {time} (Pace: {pace}) via OnTrack",
+    shareTextRide:
+      "🚴 {title}: {distance} dalam {time} (Kecepatan rata-rata: {pace}) via OnTrack",
   };
 
   // Automatically localized default title based on time of day and selected language
@@ -161,6 +166,8 @@ export default function ShareModal({
   const formattedPace = calculatePace(timerSeconds, distanceMeters);
   const formattedSpeed = formatSpeed(timerSeconds, distanceMeters);
   const calories = calculateCalories(distanceMeters, activity);
+  const showElevation =
+    isRide && !!elevationData && (elevationData.points?.length ?? 0) > 1;
 
   const routeSvgPath = useMemo(() => {
     return generateRouteSvgPath(routeCoordinates);
@@ -222,13 +229,18 @@ export default function ShareModal({
       setIsExporting(true);
 
       const titleToShare = sessionTitle || s.defaultRun;
-      const shareMessage = (
-        s.shareText || "🏃 {title}: {distance} ({pace}) via OnTrack"
-      )
+      const template = isRide
+        ? s.shareTextRide || "🚴 {title}: {distance} ({pace}) via OnTrack"
+        : s.shareText || "🏃 {title}: {distance} ({pace}) via OnTrack";
+      let shareMessage = template
         .replace("{title}", titleToShare)
         .replace("{distance}", formattedDistance)
         .replace("{time}", formattedTime)
         .replace("{pace}", isRide ? `${formattedSpeed} km/h` : formattedPace);
+
+      if (showElevation) {
+        shareMessage += ` • ${s.elevation || "ELEVATION"}: ${elevationData.gain} m`;
+      }
 
       if (navigator.canShare) {
         const blob = await toBlob(cardRef.current, {
@@ -468,7 +480,11 @@ export default function ShareModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-white/10 text-left">
+                <div
+                  className={`grid ${
+                    showElevation ? "grid-cols-2" : "grid-cols-3"
+                  } gap-2 pt-2.5 border-t border-white/10 text-left`}
+                >
                   <div>
                     <span className="text-[10px] font-medium text-zinc-400 block uppercase">
                       {s.time}
@@ -479,7 +495,7 @@ export default function ShareModal({
                   </div>
                   <div>
                     <span className="text-[10px] font-medium text-zinc-400 block uppercase">
-                      {isRide ? s.speed || "SPEED" : s.pace}
+                      {isRide ? s.avgSpeed || "AVG SPEED" : s.pace}
                     </span>
                     <span className="text-sm sm:text-base font-bold text-white font-mono">
                       {isRide
@@ -487,6 +503,16 @@ export default function ShareModal({
                         : formattedPace.replace(" ", "")}
                     </span>
                   </div>
+                  {showElevation && (
+                    <div>
+                      <span className="text-[10px] font-medium text-zinc-400 block uppercase">
+                        {s.elevation || "ELEVATION"}
+                      </span>
+                      <span className="text-sm sm:text-base font-bold text-white font-mono">
+                        {elevationData.gain} m
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <span className="text-[10px] font-medium text-zinc-400 block uppercase">
                       {s.calories}

@@ -12,6 +12,7 @@ import {
   Loader2,
   Landmark,
   Bike,
+  Mountain,
 } from "lucide-react";
 import { playTactileSound } from "../utils/soundEffects";
 import {
@@ -20,6 +21,7 @@ import {
   POI_MIN_ZOOM,
   getCategory,
 } from "../utils/pois";
+import { buildElevationPath } from "../utils/elevation";
 
 /**
  * Keyless, free base-map catalogue. Esri World Street Map is the closest free
@@ -137,6 +139,7 @@ export default function MapRoute({
   liveCoordinates = [],
   isLiveTracking = false,
   isLoadingRoute = false,
+  elevationData = null,
   onAddWaypoint,
   t,
 }) {
@@ -170,6 +173,9 @@ export default function MapRoute({
         baseTerrain: "Topografi",
         baseLight: "Minimalis Terang",
         baseDark: "Mode Gelap",
+        elevationTitle: "Profil Elevasi",
+        elevationGain: "Naik",
+        elevationLoss: "Turun",
         poiTitle: "Tempat Strategis",
         poiToggleOn: "Tampilkan tempat strategis",
         poiToggleOff: "Sembunyikan tempat strategis",
@@ -982,6 +988,53 @@ export default function MapRoute({
             </div>
           )}
         </div>
+
+        {/* Elevation Profile (rides only) */}
+        {activity === "ride" &&
+          !showLocationPrompt &&
+          elevationData &&
+          elevationData.points &&
+          elevationData.points.length > 1 && (
+            <div className="absolute bottom-11 left-2.5 z-[990] w-[232px] max-w-[70%] pointer-events-none bg-white border-2 border-black rounded-lg shadow-[3px_3px_0_#000000] px-2 pt-1.5 pb-1.5">
+              <div className="flex items-center justify-between text-[9px] font-mono font-black text-slate-700 mb-0.5">
+                <span className="flex items-center gap-1">
+                  <Mountain className="w-3 h-3 text-emerald-700" />
+                  {m.elevationTitle}
+                </span>
+                <span className="text-slate-500">
+                  {elevationData.min}–{elevationData.max} m
+                </span>
+              </div>
+              <svg
+                viewBox="0 0 100 30"
+                preserveAspectRatio="none"
+                className="w-full h-8 block"
+              >
+                <path
+                  d={`${buildElevationPath(elevationData.points, 100, 30)} L100,30 L0,30 Z`}
+                  fill="#a7f3d0"
+                  stroke="none"
+                />
+                <path
+                  d={buildElevationPath(elevationData.points, 100, 30)}
+                  fill="none"
+                  stroke="#047857"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+              <div className="flex items-center justify-between text-[8px] font-mono font-bold mt-0.5">
+                <span className="text-emerald-700">
+                  {m.elevationGain} +{elevationData.gain} m
+                </span>
+                <span className="text-slate-500">
+                  {m.elevationLoss} −{elevationData.loss} m
+                </span>
+              </div>
+            </div>
+          )}
 
         {/* Mode & Status Badge Bottom-Left */}
         <div className="absolute bottom-2.5 left-2.5 z-[999] px-2.5 py-1 bg-white rounded-lg border-2 border-black text-[10px] text-black font-mono font-black shadow-[2px_2px_0_#000000] flex items-center gap-2">

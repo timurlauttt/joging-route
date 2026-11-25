@@ -83,6 +83,7 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 ### 11. 🚴 Dual-Activity Engine (Run & Ride)
 
 - A single **Run / Ride** switch (persisted in `localStorage`) re-wires the whole app Strava-style: it swaps the routing profile (Valhalla `pedestrian` ↔ `bicycle`), the metric card (average **pace** ↔ average **speed** in km/h), the calorie model (62 ↔ 30 kcal/km), the live GPS track and route colours, the voice-cue language, the share-card labels, and auto-selects the **CyclOSM** basemap for rides.
+- **Elevation profile (rides)**: queries the keyless **Open-Meteo Elevation API** (Copernicus DEM) for the planned route and draws a live climb profile on the map with total ascent/descent, an **Elevation Gain** metric card, and an **ELEVATION** stat on the exported share card.
 
 ### 12. 🏨 Nearby Strategic Places (POI)
 
@@ -102,6 +103,7 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 | **KM Splits on Card**              |    Restricted / Subscription    |              **Included on Exported Social Card**               |
 | **Road Route Builder**             |        Paid Subscription        |                     **Free & Open Source**                      |
 | **Cycling Mode**                   |        Subscription Tier        |                 **Built-in Run / Ride Switch**                  |
+| **Elevation Profile (Rides)**      |        Subscription Tier        |             **Free Keyless DEM Climb Data & Chart**             |
 | **Nearby Places (Hotels, etc.)**   |         Paid Spotlight          |                  **Free Keyless POI Overlay**                   |
 | **Basemap Choice**                 |         Locked Provider         | **Street / OSM / CyclOSM / Satellite / Terrain / Light / Dark** |
 | **Screen-Off Background Tracking** |       Native App Service        |               **Audio Keep-Alive + MediaSession**               |
@@ -116,7 +118,7 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 
 - **Core Framework**: [React 19](https://react.dev/) + [Vite 6](https://vitejs.dev/)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) (Custom neobrutalist light palette, matte surfaces, hard-shadow accents)
-- **Map & Spatial Routing**: [Leaflet.js](https://leafletjs.com/), [Valhalla Public OSM Router](https://valhalla1.openstreetmap.de/) (pedestrian & bicycle profiles), [OSRM](http://project-osrm.org/) (car fallback), [OpenStreetMap Overpass API](https://overpass-api.de/) (nearby places), [Esri World Street Map](https://server.arcgisonline.com) & [CyclOSM](https://www.cyclosm.org/) tiles
+- **Map & Spatial Routing**: [Leaflet.js](https://leafletjs.com/), [Valhalla Public OSM Router](https://valhalla1.openstreetmap.de/) (pedestrian & bicycle profiles), [OSRM](http://project-osrm.org/) (car fallback), [OpenStreetMap Overpass API](https://overpass-api.de/) (nearby places), [Open-Meteo Elevation API](https://open-meteo.com/) (keyless DEM elevation), [Esri World Street Map](https://server.arcgisonline.com) & [CyclOSM](https://www.cyclosm.org/) tiles
 - **PWA & Device APIs**: Service Worker, Screen Wake Lock, Web Speech API, MediaSession API, Web Share API
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **Image Generation**: [html-to-image](https://github.com/bubkoo/html-to-image)
@@ -143,6 +145,7 @@ jog-route/
 │   ├── utils/
 │   │   ├── audioCues.js         # Web Speech API synthesized pace/speed announcement engine
 │   │   ├── backgroundAudio.js   # Silent audio loop keep-alive & MediaSession worker
+│   │   ├── elevation.js         # Open-Meteo keyless elevation profile & gain/loss engine
 │   │   ├── formatters.js        # Distance, Pace, Speed, Time & Calorie calculation helpers
 │   │   ├── pois.js              # Overpass API nearby strategic-places (POI) engine
 │   │   ├── routing.js           # Valhalla pedestrian/bicycle routing, OSRM fallback & Haversine formula

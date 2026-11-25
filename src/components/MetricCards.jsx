@@ -1,4 +1,4 @@
-import { Flame, Gauge, Route, Timer } from "lucide-react";
+import { Flame, Gauge, Mountain, Route, Timer } from "lucide-react";
 import {
   calculateCalories,
   calculatePace,
@@ -17,6 +17,7 @@ export default function MetricCards({
   distanceMeters,
   timerSeconds,
   isRunning,
+  elevationData = null,
   t,
 }) {
   const m = t?.metrics || {
@@ -33,6 +34,8 @@ export default function MetricCards({
     speedUnit: "km/j",
     paceRealtime: "Kalkulasi realtime",
     paceNeedsData: "Butuh rute & waktu",
+    elevationGain: "Elevasi Naik",
+    elevationUnavailable: "Butuh rute sepeda",
     calories: "Estimasi Energi",
     caloriesSub: "Kalori terbakar",
   };
@@ -45,7 +48,11 @@ export default function MetricCards({
   const calories = calculateCalories(distanceMeters, activity);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 w-full max-w-full min-w-0">
+    <div
+      className={`grid grid-cols-2 ${
+        isRide ? "lg:grid-cols-5" : "lg:grid-cols-4"
+      } gap-2.5 sm:gap-3.5 w-full max-w-full min-w-0`}
+    >
       {/* Distance Card — Sky Blue Accent */}
       <div className="bg-white rounded-xl p-2.5 sm:p-3.5 border-2 border-black shadow-[4px_4px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#000000] transition-all duration-150 min-w-0">
         <div className="flex items-center justify-between mb-1 sm:mb-1.5 min-w-0">
@@ -129,6 +136,34 @@ export default function MetricCards({
             : m.paceNeedsData}
         </p>
       </div>
+
+      {/* Elevation Gain Card (rides only) — Emerald Accent */}
+      {isRide && (
+        <div className="bg-white rounded-xl p-2.5 sm:p-3.5 border-2 border-black shadow-[4px_4px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#000000] transition-all duration-150 min-w-0">
+          <div className="flex items-center justify-between mb-1 sm:mb-1.5 min-w-0">
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-800 font-mono flex items-center gap-1.5 truncate">
+              <Mountain className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span className="truncate">{m.elevationGain}</span>
+            </span>
+            <span className="text-[9px] sm:text-[10px] font-mono font-black px-1.5 py-0.5 rounded bg-emerald-200 border-2 border-black text-emerald-950 shrink-0">
+              GAIN
+            </span>
+          </div>
+          <div className="flex items-baseline gap-1 min-w-0">
+            <span className="text-xl sm:text-3xl font-black tracking-tight text-black font-mono truncate">
+              {elevationData ? elevationData.gain : "0"}
+            </span>
+            <span className="text-xs sm:text-sm font-black font-mono text-emerald-600 shrink-0">
+              m
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-600 font-mono font-medium mt-1 truncate border-t-2 border-slate-100 pt-1">
+            {elevationData
+              ? `${elevationData.min}–${elevationData.max} m`
+              : m.elevationUnavailable}
+          </p>
+        </div>
+      )}
 
       {/* Calories Card — Violet Accent */}
       <div className="bg-white rounded-xl p-2.5 sm:p-3.5 border-2 border-black shadow-[4px_4px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#000000] transition-all duration-150 min-w-0">

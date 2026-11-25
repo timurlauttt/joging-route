@@ -21,6 +21,7 @@ import {
   stopBackgroundAudio,
 } from "./utils/backgroundAudio";
 import { speakKilometerSplit } from "./utils/audioCues";
+import { fetchElevationProfile } from "./utils/elevation";
 
 export default function App() {
   // Localization: 'id' | 'en' (stored in localStorage)
@@ -60,9 +61,13 @@ export default function App() {
 
   const activityRef = useRef(activity);
 
+  // Elevation profile for rides (Strava-style climb data), derived from the route.
+  const [elevationData, setElevationData] = useState(null);
+
   const handleActivityChange = useCallback((next) => {
     activityRef.current = next;
     setActivity(next);
+    setElevationData(null);
     try {
       localStorage.setItem("ontrack_activity", next);
     } catch {
@@ -349,6 +354,7 @@ export default function App() {
           setRouteGeojson(null);
           setDistanceMeters(0);
           setIsLoadingRoute(false);
+          setElevationData(null);
         }
       }, 0);
       return () => {
@@ -365,6 +371,22 @@ export default function App() {
         if (isMounted) {
           setRouteGeojson(result.geojson);
           setDistanceMeters(result.distance);
+        }
+        // Elevation profile for rides (Strava-style climb data).
+        if (
+          activity === "ride" &&
+          result.coordinates &&
+          result.coordinates.length >= 2
+        ) {
+          try {
+            const elevation = await fetchElevationProfile(result.coordinates);
+            if (isMounted) setElevationData(elevation);
+          } catch (elevErr) {
+            console.warn("Elevation fetch failed:", elevErr.message);
+            if (isMounted) setElevationData(null);
+          }
+        } else if (isMounted) {
+          setElevationData(null);
         }
       } catch (err) {
         console.error("Failed to compute route:", err);
@@ -402,6 +424,7 @@ export default function App() {
     lastSplitKmRef.current = 0;
     lastSplitTimeRef.current = 0;
     liveDistanceMetersRef.current = 0;
+    setElevationData(null);
     if (mode === "builder") {
       setWaypoints([]);
       setRouteGeojson(null);
@@ -425,6 +448,7 @@ export default function App() {
         stopGpsTracking();
         releaseWakeLock();
       }
+      setElevationData(null);
       setMode(newMode);
     },
     [mode, isRunning, stopGpsTracking, releaseWakeLock],
@@ -498,6 +522,7 @@ export default function App() {
           distanceMeters={activeDistance}
           timerSeconds={timerSeconds}
           isRunning={isRunning}
+          elevationData={elevationData}
           t={t}
         />
 
@@ -511,6 +536,7 @@ export default function App() {
             liveCoordinates={liveCoordinates}
             isLiveTracking={isRunning && mode === "freerun"}
             isLoadingRoute={isLoadingRoute}
+            elevationData={elevationData}
             onAddWaypoint={handleAddWaypoint}
             t={t}
           />
@@ -585,6 +611,7 @@ export default function App() {
             timerSeconds={timerSeconds}
             routeCoordinates={activeCoordinates}
             splits={splits}
+            elevationData={elevationData}
             lang={lang}
             t={t}
           />
