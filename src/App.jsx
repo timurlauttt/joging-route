@@ -12,9 +12,11 @@ import MetricCards from "./components/MetricCards";
 import ControlsBar from "./components/ControlsBar";
 import { fetchRoute, haversineDistance } from "./utils/routing";
 import { calculatePace } from "./utils/formatters";
+import { generateRouteByDistance, getCurrentPosition } from "./utils/autoRoute";
 
 const ShareModal = lazy(() => import("./components/ShareModal"));
 const InfoModal = lazy(() => import("./components/InfoModal"));
+const AutoRouteModal = lazy(() => import("./components/AutoRouteModal"));
 import { translations } from "./utils/translations";
 import {
   startBackgroundAudio,
@@ -92,6 +94,9 @@ export default function App() {
 
   // Share Modal state
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  // Auto Route (distance-based route generation) modal state
+  const [isAutoRouteOpen, setIsAutoRouteOpen] = useState(false);
 
   // Voice Audio Cues state (persisted in localStorage)
   const [isVoiceCueEnabled, setIsVoiceCueEnabled] = useState(() => {
@@ -435,6 +440,34 @@ export default function App() {
     }
   }, [mode]);
 
+  // Auto Route: build a road-snapped loop of a chosen distance from the start
+  // point (first waypoint, or the user's current location).
+  const handleAutoRoute = useCallback(
+    async (targetMeters, onProgress) => {
+      const start =
+        waypoints.length > 0
+          ? { lat: waypoints[0].lat, lng: waypoints[0].lng }
+          : await getCurrentPosition();
+
+      const result = await generateRouteByDistance(
+        start,
+        targetMeters,
+        activity,
+        onProgress,
+      );
+
+      setSplits([]);
+      lastSplitKmRef.current = 0;
+      lastSplitTimeRef.current = 0;
+      liveDistanceMetersRef.current = 0;
+      setElevationData(null);
+      setWaypoints(result.waypoints.map((p) => ({ lat: p.lat, lng: p.lng })));
+
+      return result.distance;
+    },
+    [waypoints, activity],
+  );
+
   const handleModeChange = useCallback(
     (newMode) => {
       if (newMode === mode) return;
@@ -556,6 +589,7 @@ export default function App() {
           onUndoWaypoint={handleUndoWaypoint}
           onClearRoute={handleClearRoute}
           onOpenShareModal={() => setIsShareModalOpen(true)}
+          onOpenAutoRoute={() => setIsAutoRouteOpen(true)}
           isVoiceCueEnabled={isVoiceCueEnabled}
           onToggleVoiceCue={handleToggleVoiceCue}
           t={t}
@@ -614,6 +648,19 @@ export default function App() {
             elevationData={elevationData}
             lang={lang}
             t={t}
+          />
+        )}
+      </Suspense>
+
+      {/* OnTrack Auto Route Generator Modal */}
+      <Suspense fallback={null}>
+        {isAutoRouteOpen && (
+          <AutoRouteModal
+            onClose={() => setIsAutoRouteOpen(false)}
+            activity={activity}
+            hasWaypoints={waypoints.length > 0}
+            t={t}
+            onGenerate={handleAutoRoute}
           />
         )}
       </Suspense>

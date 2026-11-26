@@ -22,6 +22,7 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 4. **Nearby Strategic Places**: One-tap discovery of hotels, city squares (_alun-alun_), transit hubs, food, shopping, healthcare, sport venues and attractions around the viewport.
 5. **Instagram-Ready Social Export**: Strava-style session cards in **4:5 Post** and **9:16 Story** ratios, rendered completely on-device without uploading your photos or stats to any server.
 6. **Zero-Tracking Privacy**: 100% of user data remains strictly in browser memory.
+7. **Instant Auto-Route by Distance**: Enter a target distance (3–50 km presets or a custom value) and OnTrack generates a road-snapped **loop route** from your start point automatically.
 
 ---
 
@@ -90,6 +91,11 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 - **Category-coloured markers** (lodging 🏨, square 🏛️, transit 🚉, food 🍽️, shopping 🛍️, health 🏥, sport 🏟️, attraction 🎯) fetched on demand from OpenStreetMap data as the viewport moves.
 - Accessed via a **Layers & Places** panel with a master toggle and per-category filter chips, plus a quick-access landmark button on the map.
 
+### 13. 🧭 Auto-Route by Target Distance
+
+- **One-tap loop generation**: pick a distance template (**3, 5, 10, 15, 20, 25, 30, 35, 50 km**) or type a custom value, and OnTrack builds a road-snapped **loop route** from your start point (the first waypoint, or your live GPS location) — for either running or cycling.
+- **Convergent radius solver**: the keyless router is queried iteratively, rescaling the loop radius each pass (starting from $R = \text{target} / 2\pi$) until the routed distance lands within ±6% of the requested target. No server-side generation, no API keys.
+
 ---
 
 ## 📊 Feature Comparison
@@ -102,6 +108,7 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 | **Audio Voice Cues**               |     Proprietary Audio Packs     |               **Native Web Speech API (ID & EN)**               |
 | **KM Splits on Card**              |    Restricted / Subscription    |              **Included on Exported Social Card**               |
 | **Road Route Builder**             |        Paid Subscription        |                     **Free & Open Source**                      |
+| **Auto-Route by Distance**         |       Paid / Manual Only        |                **Free One-Tap Loop Generation**                 |
 | **Cycling Mode**                   |        Subscription Tier        |                 **Built-in Run / Ride Switch**                  |
 | **Elevation Profile (Rides)**      |        Subscription Tier        |             **Free Keyless DEM Climb Data & Chart**             |
 | **Nearby Places (Hotels, etc.)**   |         Paid Spotlight          |                  **Free Keyless POI Overlay**                   |
@@ -136,7 +143,8 @@ jog-route/
 │   └── sw.js                    # Service Worker asset caching
 ├── src/
 │   ├── components/
-│   │   ├── ControlsBar.jsx      # Start/Pause, Voice Cue toggle, Undo, Reset, Share
+│   │   ├── AutoRouteModal.jsx   # Distance-based automatic loop route generator modal
+│   │   ├── ControlsBar.jsx      # Start/Pause, Voice Cue toggle, Undo, Reset, Auto Route, Share
 │   │   ├── InfoModal.jsx        # User Guide, 100% Privacy Policy & Developer Bio
 │   │   ├── MapRoute.jsx         # Leaflet container, keyless basemaps, POI overlay & live GPS layer
 │   │   ├── MetricCards.jsx      # Realtime Distance, Pace/Speed, Time & Calorie metrics
@@ -144,6 +152,7 @@ jog-route/
 │   │   └── ShareModal.jsx       # 4:5 & 9:16 Instagram card with route & KM Splits table
 │   ├── utils/
 │   │   ├── audioCues.js         # Web Speech API synthesized pace/speed announcement engine
+│   │   ├── autoRoute.js         # Distance-based loop route generation (geodesic loop + convergent solver)
 │   │   ├── backgroundAudio.js   # Silent audio loop keep-alive & MediaSession worker
 │   │   ├── elevation.js         # Open-Meteo keyless elevation profile & gain/loss engine
 │   │   ├── formatters.js        # Distance, Pace, Speed, Time & Calorie calculation helpers
