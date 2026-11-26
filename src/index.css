@@ -107,28 +107,75 @@
   max-width: 100% !important;
 }
 
+/* On phones the map wrapper is only ~380px tall, so the forced 460px minimum
+   would push the bottom-right zoom (+ / −) control below the clipped edge.
+   Let the container respect the wrapper height on small screens. */
+@media (max-width: 640px) {
+  .leaflet-container {
+    min-height: 0 !important;
+  }
+}
+
 .leaflet-tile {
   filter: contrast(1.02);
 }
 
-/* Neo-Brutalist Light Mode Leaflet Zoom Controls */
+/* Neo-Brutalist Light Mode Leaflet Zoom Controls (+ / −) */
 .leaflet-bar {
-  border: 2px solid #000000 !important;
-  border-radius: 8px !important;
-  overflow: hidden;
-  box-shadow: 3px 3px 0 #000000 !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  background: transparent !important;
 }
 
-.leaflet-bar a {
+.leaflet-bar a,
+.leaflet-touch .leaflet-bar a {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 34px !important;
+  height: 34px !important;
+  line-height: 1 !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  text-indent: 0 !important;
   background-color: #ffffff !important;
   color: #000000 !important;
-  border-bottom: 2px solid #000000 !important;
+  border: 2px solid #000000 !important;
+  border-radius: 8px !important;
+  box-shadow: 2px 2px 0 #000000 !important;
+  margin-bottom: 6px !important;
   transition: all 0.15s ease;
+}
+
+.leaflet-bar a:last-child {
+  margin-bottom: 0 !important;
 }
 
 .leaflet-bar a:hover {
   background-color: #fef08a !important;
   color: #000000 !important;
+}
+
+.leaflet-bar a:active {
+  transform: translate(1px, 1px);
+  box-shadow: none !important;
+}
+
+/* Bigger, easier tap targets on touch devices */
+@media (pointer: coarse), (max-width: 640px) {
+  .leaflet-bar a,
+  .leaflet-touch .leaflet-bar a {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 26px !important;
+    border-radius: 10px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .leaflet-bar a:last-child {
+    margin-bottom: 0 !important;
+  }
 }
 
 .leaflet-control-attribution {

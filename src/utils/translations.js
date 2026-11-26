@@ -7,11 +7,11 @@ export const translations = {
     brand: "OnTrack",
     locale: "id-ID",
     nav: {
-      builder: "Builder",
-      freeRun: "Free Run",
+      builder: "Buat Rute",
+      freeRun: "Rekam GPS",
       wakeLock: "Layar Aktif",
-      tracking: "Tracking",
-      points: "Pt",
+      tracking: "Pelacakan",
+      points: "titik",
       gps: "GPS",
       standby: "Standby",
       voiceCueOn: "Suara KM Aktif",
@@ -79,7 +79,7 @@ export const translations = {
       layerDark: "Ganti ke Mode Gelap",
       startMarker: "Titik Awal (Start)",
       finishMarker: "Titik Akhir (Finish)",
-      waypoint: "Waypoint",
+      waypoint: "Titik",
       myLocation: "Lokasi Anda",
       layersTitle: "Lapisan Peta",
       baseRoad: "Peta Jalan",
@@ -109,9 +109,29 @@ export const translations = {
       catHealth: "Kesehatan",
       catSport: "Olahraga & Taman",
       catAttraction: "Wisata & Landmark",
+      bikePrefsTitle: "Preferensi Sepeda",
+      avoidHills: "Hindari tanjakan",
+      avoidHillsHint: "Utamakan jalan datar",
+      surfaceLabel: "Permukaan",
+      surfaceAny: "Bebas",
+      surfacePaved: "Aspal",
+      viaTitle: "Lewat titik ini",
+      viaSet: "Lewat sini",
+      viaClear: "Hapus via",
+      viaActive: "Loop akan lewat titik ini",
+      dragHint:
+        "Geser penanda untuk memindah titik — otomatis menempel ke jalan",
+      windowTitle: "Peta Rute OnTrack",
+      modeRoadRun: "Rute Jalan",
+      modeBikeRoute: "Rute Sepeda",
+      modeLiveGps: "GPS Langsung",
+      modeLiveRide: "Sepeda Langsung",
+      pointsUnit: "titik",
+      gpsPointsUnit: "titik GPS",
     },
     share: {
       modalTitle: "Bagikan Sesi Lari",
+      windowTitle: "Bagikan Hasil OnTrack",
       modalSubtitle:
         "Kustomisasi nama sesi dan ekspor kartu ringkasan estetis ke media sosial.",
       sessionNameLabel: "Nama Sesi Lari:",
@@ -156,9 +176,13 @@ export const translations = {
         "🚴 {title}: {distance} dalam {time} (Kecepatan rata-rata: {pace}) via OnTrack",
       toggleSplits: "Tampilkan Splits per KM di Kartu",
       splitsHeader: "SPLITS",
+      exportGpx: "Unduh GPX",
+      gpxToast: "File GPX berhasil diunduh!",
+      gpxFailed: "Gagal mengunduh GPX (rute belum tersedia).",
     },
     autoRoute: {
       modalTitle: "Buat Rute Otomatis",
+      windowTitle: "Rute Otomatis OnTrack",
       modalSubtitle:
         "Pilih jarak target, rute loop dibuat otomatis mengikuti ruas jalan.",
       presetsLabel: "Template Jarak",
@@ -177,30 +201,74 @@ export const translations = {
       close: "Tutup",
       activityRun: "Mode Lari",
       activityRide: "Mode Sepeda",
+      directionLabel: "Arah Rute",
+      directionAuto: "Auto",
+      directionHint:
+        "Pilih arah loop, atau biarkan Auto memilih arah paling ramah jalan.",
+      errorOffroad:
+        "Arah itu tidak ada jalan (laut/off-road). Pilih arah lain.",
+      optionsTitle: "Pilih Rute",
+      optionsHint:
+        "Pilih salah satu loop di bawah ini, atau buat ulang untuk variasi baru.",
+      regenerateBtn: "Buat Ulang",
+      useBtn: "Pakai Rute Ini",
+      estTime: "Estimasi",
+      bestBadge: "Terbaik",
+      dirN: "U",
+      dirNE: "TL",
+      dirE: "T",
+      dirSE: "TG",
+      dirS: "S",
+      dirSW: "BD",
+      dirW: "B",
+      dirNW: "BL",
     },
     info: {
       modalTitle: "Panduan & Kebijakan Privasi",
+      windowTitle: "Panduan & Privasi OnTrack",
       tabGuide: "Panduan Penggunaan",
       tabPrivacy: "Kebijakan Privasi",
-      guideStep1Title: "1. Rencanakan Rute (Builder Mode)",
-      guideStep1Desc:
-        "Klik titik jalan di peta untuk membuat rute. Titik-titik akan otomatis menempel di ruas jalan (road snapping) dengan kalkulasi jarak akurat.",
-      guideStep2Title: "2. Lari Bebas GPS (Free Run Mode)",
-      guideStep2Desc:
-        'Pindah ke tab Free Run dan klik tombol "Mulai" saat berlari di luar ruangan. GPS live merekam pergerakan Anda, dan layar HP dijaga tetap menyala (Wake Lock).',
-      guideStep3Title: "3. Bagikan Kartu Hasil Lari (Share)",
-      guideStep3Desc:
-        "Beri nama sesi lari kustom (ala Strava), pilih format rasio (4:5 Post IG atau 9:16 Story), pasang foto latar Anda, lalu bagikan atau unduh kartu ringkasannya.",
+      guideSteps: [
+        {
+          title: "1. Buat & Atur Rute",
+          desc: "Klik peta untuk menandai jalan — semua titik otomatis menempel ke ruas jalan. Geser penanda untuk memindah titik; rute langsung dihitung ulang.",
+        },
+        {
+          title: "2. Mode Lari & Sepeda",
+          desc: "Ganti mode Lari/Sepeda di bar atas. Mode sepeda memakai peta CyclOSM, profil elevasi ~30 m, serta preferensi 'Hindari tanjakan' dan permukaan Aspal/Bebas.",
+        },
+        {
+          title: "3. Auto-Route: Jarak, Arah & Via",
+          desc: "Pilih template 3–50 km atau isi jarak sendiri. Pilih arah kompas 8 arah atau Auto, lalu dapatkan hingga 3 opsi loop + tombol Buat Ulang. Aktifkan Tempat Strategis lalu ketuk 'Lewat sini' pada alun-alun/hotel agar loop melewatinya.",
+        },
+        {
+          title: "4. Rekam Rute GPS Langsung",
+          desc: "Pindah ke menu Rekam GPS dan tekan Mulai. GPS merekam rute Anda langsung dan layar HP dijaga tetap menyala.",
+        },
+        {
+          title: "5. Bagikan Kartu & Ekspor GPX",
+          desc: "Buat kartu ringkasan ala Strava (4:5 atau 9:16) dengan foto latar, lalu unduh GPX (termasuk elevasi) untuk Strava, Garmin, atau Komoot.",
+        },
+      ],
       privacyTitle: "100% Client-Side & Privasi Penuh",
-      privacyPoint1Title: "Tanpa Server & Tanpa Database",
-      privacyPoint1Desc:
-        "OnTrack tidak memiliki server database untuk menyimpan data Anda. Kami tidak mengumpulkan, melacak, atau menjual data aktivitas Anda ke pihak mana pun.",
-      privacyPoint2Title: "Diproses Lokal di Browser Anda",
-      privacyPoint2Desc:
-        "Seluruh koordinat GPS, rute jalan, foto yang dipilih, dan waktu latihan sepenuhnya diproses dan disimpan hanya di memori browser lokal perangkat Anda.",
-      privacyPoint3Title: "Izin Lokasi Hanya Saat Digunakan",
-      privacyPoint3Desc:
-        "Akses GPS hanya diminta untuk memusatkan peta dan melacak rute aktif Anda secara real-time. Anda memegang kendali penuh atas izin browser Anda.",
+      privacyPoints: [
+        {
+          title: "Tanpa Server & Tanpa Database",
+          desc: "OnTrack tidak menyimpan data Anda di server. Tidak ada akun, pelacakan, atau penjualan data aktivitas ke pihak mana pun.",
+        },
+        {
+          title: "Diproses Lokal di Browser",
+          desc: "Koordinat GPS, rute, foto latar, split, dan stopwatch sepenuhnya diproses dan disimpan di memori browser perangkat Anda.",
+        },
+        {
+          title: "Izin Lokasi Hanya Saat Digunakan",
+          desc: "Akses GPS hanya diminta untuk memusatkan peta dan merekam rute aktif. Anda memegang kendali penuh atas izin browser.",
+        },
+        {
+          title: "Layanan Peta Publik Tanpa Akun",
+          desc: "Untuk membuat rute, peta, elevasi, dan tempat terdekat, koordinat dikirim ke layanan publik gratis (Valhalla/OSM, tile Esri/CyclOSM, AWS Terrain Tiles, Overpass) tanpa akun dan tanpa menyimpan riwayat Anda.",
+        },
+      ],
       developerLabel: "Dibuat oleh",
       developerLinkText: "pangestudev",
       viewProfile: "Lihat profil developer selengkapnya",
@@ -221,11 +289,11 @@ export const translations = {
     brand: "OnTrack",
     locale: "en-US",
     nav: {
-      builder: "Builder",
-      freeRun: "Free Run",
+      builder: "Plan Route",
+      freeRun: "Record GPS",
       wakeLock: "Awake",
       tracking: "Tracking",
-      points: "Pts",
+      points: "points",
       gps: "GPS",
       standby: "Standby",
       voiceCueOn: "Voice Cues On",
@@ -284,7 +352,7 @@ export const translations = {
       deniedNotice:
         "Location access denied. Enable Location in browser URL settings.",
       timeoutNotice: "GPS timed out. Ensure device GPS is active.",
-      snapping: "Snapping route...",
+      snapping: "Adjusting route...",
       emptyBuilderGuide: "Click map to mark route",
       freeRunTracking: "Live GPS",
       freeRunIdle: 'Click "Start" to record GPS',
@@ -293,7 +361,7 @@ export const translations = {
       layerDark: "Switch to Dark Mode",
       startMarker: "Start Point",
       finishMarker: "Finish Point",
-      waypoint: "Waypoint",
+      waypoint: "Point",
       myLocation: "Your Location",
       layersTitle: "Map Layers",
       baseRoad: "Road Map",
@@ -323,9 +391,29 @@ export const translations = {
       catHealth: "Health",
       catSport: "Sport & Parks",
       catAttraction: "Attractions",
+      bikePrefsTitle: "Bike Preferences",
+      avoidHills: "Avoid hills",
+      avoidHillsHint: "Prefer flat roads",
+      surfaceLabel: "Surface",
+      surfaceAny: "Any",
+      surfacePaved: "Paved",
+      viaTitle: "Pass through here",
+      viaSet: "Go via here",
+      viaClear: "Clear via",
+      viaActive: "Loop will pass through this point",
+      dragHint:
+        "Drag a marker to move a point — it sticks to the road automatically",
+      windowTitle: "OnTrack Route Map",
+      modeRoadRun: "Road Route",
+      modeBikeRoute: "Bike Route",
+      modeLiveGps: "Live GPS",
+      modeLiveRide: "Live Ride",
+      pointsUnit: "points",
+      gpsPointsUnit: "GPS points",
     },
     share: {
       modalTitle: "Share Run Session",
+      windowTitle: "OnTrack Share Card",
       modalSubtitle:
         "Customize session name and export clean aesthetic summary card to social media.",
       sessionNameLabel: "Session Name:",
@@ -369,9 +457,13 @@ export const translations = {
         "🚴 {title}: {distance} in {time} (Avg speed: {pace}) via OnTrack",
       toggleSplits: "Show Splits per KM on Card",
       splitsHeader: "SPLITS",
+      exportGpx: "Download GPX",
+      gpxToast: "GPX file downloaded!",
+      gpxFailed: "Failed to download GPX (no route yet).",
     },
     autoRoute: {
       modalTitle: "Auto-Generate Route",
+      windowTitle: "OnTrack Auto Route",
       modalSubtitle:
         "Pick a target distance and a road-snapped loop route is generated automatically.",
       presetsLabel: "Distance Templates",
@@ -389,30 +481,74 @@ export const translations = {
       close: "Close",
       activityRun: "Run Mode",
       activityRide: "Ride Mode",
+      directionLabel: "Route Direction",
+      directionAuto: "Auto",
+      directionHint:
+        "Pick a loop direction, or let Auto choose the most road-friendly one.",
+      errorOffroad:
+        "There is no road in that direction (sea/off-road). Pick another.",
+      optionsTitle: "Choose a Route",
+      optionsHint:
+        "Pick one of the loops below, or regenerate for new variations.",
+      regenerateBtn: "Regenerate",
+      useBtn: "Use This Route",
+      estTime: "Est.",
+      bestBadge: "Best",
+      dirN: "N",
+      dirNE: "NE",
+      dirE: "E",
+      dirSE: "SE",
+      dirS: "S",
+      dirSW: "SW",
+      dirW: "W",
+      dirNW: "NW",
     },
     info: {
       modalTitle: "Guide & Privacy Policy",
+      windowTitle: "OnTrack Guide & Privacy",
       tabGuide: "User Guide",
       tabPrivacy: "Privacy Policy",
-      guideStep1Title: "1. Plan Your Route (Builder Mode)",
-      guideStep1Desc:
-        "Click on the map to mark waypoints. Routes automatically snap to road networks with accurate turn-by-turn distance calculations.",
-      guideStep2Title: "2. Live GPS Tracking (Free Run Mode)",
-      guideStep2Desc:
-        'Switch to Free Run and tap "Start" during outdoor runs. Live GPS records your exact path, while Screen Wake Lock keeps your display awake.',
-      guideStep3Title: "3. Share Clean Aesthetic Cards",
-      guideStep3Desc:
-        "Name your run session (Strava-style), pick a card ratio (4:5 Post or 9:16 Story), customize background photos, and download or share your stats card.",
+      guideSteps: [
+        {
+          title: "1. Build & Adjust Routes",
+          desc: "Tap the map to mark roads — points automatically stick to the road network. Drag any marker to move a point and the route recomputes instantly.",
+        },
+        {
+          title: "2. Run & Ride Modes",
+          desc: "Switch Run/Ride in the top bar. Ride mode uses the CyclOSM map, a ~30 m elevation profile, and 'Avoid hills' plus Paved/Any surface preferences.",
+        },
+        {
+          title: "3. Auto-Route: Distance, Direction & Via",
+          desc: "Pick a 3–50 km template or a custom distance. Choose an 8-direction compass or Auto, then get up to 3 loop options with Regenerate. Enable Strategic Places and tap 'Go via here' on a square/hotel to route the loop through it.",
+        },
+        {
+          title: "4. Live GPS Recording",
+          desc: "Switch to Record GPS and tap Start. GPS records your route live while the screen stays awake.",
+        },
+        {
+          title: "5. Share Cards & GPX Export",
+          desc: "Build a Strava-style summary card (4:5 or 9:16) with a background photo, then download a GPX (with elevation) for Strava, Garmin, or Komoot.",
+        },
+      ],
       privacyTitle: "100% Client-Side & Zero Tracking",
-      privacyPoint1Title: "No Backend & No Server Storage",
-      privacyPoint1Desc:
-        "OnTrack does not operate any databases or backend servers to store user data. We do not collect, track, or share your running activities with any third party.",
-      privacyPoint2Title: "Processed Locally in Your Browser",
-      privacyPoint2Desc:
-        "All GPS coordinates, drawn routes, uploaded background photos, and stopwatch timers run entirely in your local browser memory.",
-      privacyPoint3Title: "Location Access Stays in Your Hands",
-      privacyPoint3Desc:
-        "GPS permissions are only used to center the map and trace active runs in real-time. You retain complete control over your browser permissions.",
+      privacyPoints: [
+        {
+          title: "No Backend & No Database",
+          desc: "OnTrack stores no user data on any server. No accounts, no tracking, and no selling of your activity data.",
+        },
+        {
+          title: "Processed Locally in Your Browser",
+          desc: "GPS coordinates, routes, background photos, splits, and the stopwatch run entirely in your device's local browser memory.",
+        },
+        {
+          title: "Location Access Stays in Your Hands",
+          desc: "GPS is only used to center the map and record active routes. You keep full control of your browser permissions.",
+        },
+        {
+          title: "Public Map Services, No Accounts",
+          desc: "To build routes, maps, elevation, and nearby places, coordinates are sent to free public services (Valhalla/OSM, Esri/CyclOSM tiles, AWS Terrain Tiles, Overpass) without accounts and without storing your history.",
+        },
+      ],
       developerLabel: "Crafted with care by",
       developerLinkText: "pangestudev",
       viewProfile: "Visit developer portfolio to see more",

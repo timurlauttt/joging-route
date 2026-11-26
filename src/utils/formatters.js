@@ -115,3 +115,26 @@ export function formatSpeed(totalSeconds, meters) {
   const speed = calculateSpeedKmh(totalSeconds, meters);
   return speed > 0 ? speed.toFixed(1) : "--";
 }
+
+/**
+ * Rough per-kilometre effort used to preview a planned route's duration:
+ * an easy run pace (~5:30 /km) and a moderate ride (~20 km/h).
+ */
+export const ESTIMATE_SECONDS_PER_KM = {
+  run: 330,
+  walk: 720,
+  ride: 180,
+};
+
+/**
+ * Estimate how long a route of `meters` will take for the given activity.
+ * @param {number} meters
+ * @param {'run'|'walk'|'ride'} activity
+ * @returns {number} seconds (0 when not computable)
+ */
+export function estimateDurationSeconds(meters, activity = "run") {
+  if (!meters || meters <= 0) return 0;
+  const perKm =
+    ESTIMATE_SECONDS_PER_KM[activity] ?? ESTIMATE_SECONDS_PER_KM.run;
+  return Math.round((meters / 1000) * perKm);
+}

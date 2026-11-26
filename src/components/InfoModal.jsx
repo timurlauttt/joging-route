@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   X,
   BookOpen,
@@ -11,51 +11,99 @@ import {
   Cpu,
   Navigation,
   ArrowRight,
-} from 'lucide-react';
-import { playTactileSound } from '../utils/soundEffects';
+  Bike,
+  Route,
+  Globe,
+} from "lucide-react";
+import { playTactileSound } from "../utils/soundEffects";
+
+/** Per-step icon + accent colour for the user-guide list. */
+const GUIDE_ICONS = [
+  { Icon: MapPin, cls: "bg-emerald-200 text-emerald-950" },
+  { Icon: Bike, cls: "bg-orange-200 text-orange-950" },
+  { Icon: Route, cls: "bg-violet-200 text-violet-950" },
+  { Icon: Radio, cls: "bg-sky-200 text-sky-950" },
+  { Icon: Share2, cls: "bg-purple-200 text-purple-950" },
+];
+
+/** Per-point icon for the privacy list. */
+const PRIVACY_ICONS = [
+  { Icon: ServerOff, cls: "bg-slate-200 text-slate-900" },
+  { Icon: Cpu, cls: "bg-slate-200 text-slate-900" },
+  { Icon: Navigation, cls: "bg-slate-200 text-slate-900" },
+  { Icon: Globe, cls: "bg-slate-200 text-slate-900" },
+];
 
 export default function InfoModal({ isOpen, onClose, t }) {
-  const [activeTab, setActiveTab] = useState('guide'); // 'guide' | 'privacy'
+  const [activeTab, setActiveTab] = useState("guide"); // 'guide' | 'privacy'
 
   if (!isOpen) return null;
 
   const info = t?.info || {
-    modalTitle: 'Panduan & Kebijakan Privasi',
-    tabGuide: 'Panduan Penggunaan',
-    tabPrivacy: 'Kebijakan Privasi',
-    guideStep1Title: '1. Rencanakan Rute (Builder Mode)',
-    guideStep1Desc: 'Klik titik jalan di peta untuk membuat rute. Titik-titik akan otomatis menempel di ruas jalan (road snapping) dengan kalkulasi jarak akurat.',
-    guideStep2Title: '2. Lari Bebas GPS (Free Run Mode)',
-    guideStep2Desc: 'Pindah ke tab Free Run dan klik tombol "Mulai" saat berlari di luar ruangan. GPS live merekam pergerakan Anda, dan layar HP dijaga tetap menyala (Wake Lock).',
-    guideStep3Title: '3. Bagikan Kartu Hasil Lari (Share)',
-    guideStep3Desc: 'Beri nama sesi lari kustom (ala Strava), pilih format rasio (4:5 Post IG atau 9:16 Story), pasang foto latar Anda, lalu bagikan atau unduh kartu ringkasannya.',
-    privacyTitle: '100% Client-Side & Privasi Penuh',
-    privacyPoint1Title: 'Tanpa Server & Tanpa Database',
-    privacyPoint1Desc: 'OnTrack tidak memiliki server database untuk menyimpan data Anda. Kami tidak mengumpulkan, melacak, atau menjual data aktivitas Anda ke pihak mana pun.',
-    privacyPoint2Title: 'Diproses Lokal di Browser Anda',
-    privacyPoint2Desc: 'Seluruh koordinat GPS, rute jalan, foto yang dipilih, dan waktu latihan sepenuhnya diproses dan disimpan hanya di memori browser lokal perangkat Anda.',
-    privacyPoint3Title: 'Izin Lokasi Hanya Saat Digunakan',
-    privacyPoint3Desc: 'Akses GPS hanya diminta untuk memusatkan peta dan melacak rute aktif Anda secara real-time. Anda memegang kendali penuh atas izin browser Anda.',
-    developerLabel: 'Dibuat oleh',
-    developerLinkText: 'pangestudev',
-    viewProfile: 'Lihat profil developer selengkapnya',
-    gotItBtn: 'Mengerti & Mulai Gunakan',
+    modalTitle: "Panduan & Kebijakan Privasi",
+    windowTitle: "Panduan & Privasi OnTrack",
+    tabGuide: "Panduan Penggunaan",
+    tabPrivacy: "Kebijakan Privasi",
+    guideSteps: [
+      {
+        title: "1. Buat & Atur Rute",
+        desc: "Klik peta untuk menandai jalan — semua titik otomatis menempel ke ruas jalan. Geser penanda untuk memindah titik; rute langsung dihitung ulang.",
+      },
+      {
+        title: "2. Mode Lari & Sepeda",
+        desc: "Ganti mode Lari/Sepeda di bar atas. Mode sepeda memakai peta CyclOSM, profil elevasi ~30 m, serta preferensi 'Hindari tanjakan' dan permukaan Aspal/Bebas.",
+      },
+      {
+        title: "3. Auto-Route: Jarak, Arah & Via",
+        desc: "Pilih template 3–50 km atau isi jarak sendiri. Pilih arah kompas 8 arah atau Auto, lalu dapatkan hingga 3 opsi loop + tombol Buat Ulang. Aktifkan Tempat Strategis lalu ketuk 'Lewat sini' pada alun-alun/hotel agar loop melewatinya.",
+      },
+      {
+        title: "4. Rekam Rute GPS Langsung",
+        desc: "Pindah ke menu Rekam GPS dan tekan Mulai. GPS merekam rute Anda langsung dan layar HP dijaga tetap menyala.",
+      },
+      {
+        title: "5. Bagikan Kartu & Ekspor GPX",
+        desc: "Buat kartu ringkasan ala Strava (4:5 atau 9:16) dengan foto latar, lalu unduh GPX (termasuk elevasi) untuk Strava, Garmin, atau Komoot.",
+      },
+    ],
+    privacyTitle: "100% Client-Side & Privasi Penuh",
+    privacyPoints: [
+      {
+        title: "Tanpa Server & Tanpa Database",
+        desc: "OnTrack tidak menyimpan data Anda di server. Tidak ada akun, pelacakan, atau penjualan data aktivitas ke pihak mana pun.",
+      },
+      {
+        title: "Diproses Lokal di Browser",
+        desc: "Koordinat GPS, rute, foto latar, split, dan stopwatch sepenuhnya diproses dan disimpan di memori browser perangkat Anda.",
+      },
+      {
+        title: "Izin Lokasi Hanya Saat Digunakan",
+        desc: "Akses GPS hanya diminta untuk memusatkan peta dan merekam rute aktif. Anda memegang kendali penuh atas izin browser.",
+      },
+      {
+        title: "Layanan Peta Publik Tanpa Akun",
+        desc: "Untuk membuat rute, peta, elevasi, dan tempat terdekat, koordinat dikirim ke layanan publik gratis (Valhalla/OSM, tile Esri/CyclOSM, AWS Terrain Tiles, Overpass) tanpa akun dan tanpa menyimpan riwayat Anda.",
+      },
+    ],
+    developerLabel: "Dibuat oleh",
+    developerLinkText: "pangestudev",
+    viewProfile: "Lihat profil developer selengkapnya",
+    gotItBtn: "Mengerti & Mulai Gunakan",
   };
 
   const handleTabChange = (tab) => {
-    playTactileSound('switch');
+    playTactileSound("switch");
     setActiveTab(tab);
   };
 
   const handleClose = () => {
-    playTactileSound('click');
+    playTactileSound("click");
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-[2500] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto overflow-x-hidden w-full max-w-full animate-fadeIn">
       <div className="relative w-full max-w-xl bg-white border-3 border-black rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[8px_8px_0_#000000] my-auto text-slate-900 flex flex-col gap-4 min-w-0">
-        
         {/* Retro Window Chrome Top Bar */}
         <div className="flex items-center justify-between border-b-2 border-black pb-3 -mx-1">
           <div className="flex items-center gap-2">
@@ -63,7 +111,7 @@ export default function InfoModal({ isOpen, onClose, t }) {
             <span className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-black inline-block" />
             <span className="w-3 h-3 rounded-full bg-[#27c93f] border border-black inline-block" />
             <span className="ml-2 font-mono text-[11px] font-black text-slate-800">
-              ~/ontrack/guide-and-privacy.md
+              {info.windowTitle}
             </span>
           </div>
 
@@ -82,7 +130,7 @@ export default function InfoModal({ isOpen, onClose, t }) {
         <div className="text-left">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono font-black tracking-widest text-orange-600 uppercase">
-              &lt;ONTRACK /&gt;
+              OnTrack
             </span>
             <span className="text-slate-400">&bull;</span>
             <span className="text-xs font-mono font-bold text-slate-600">
@@ -90,7 +138,7 @@ export default function InfoModal({ isOpen, onClose, t }) {
             </span>
           </div>
           <h2 className="text-lg sm:text-xl font-mono font-black text-slate-950 tracking-tight">
-            {activeTab === 'guide' ? info.tabGuide : info.tabPrivacy}
+            {activeTab === "guide" ? info.tabGuide : info.tabPrivacy}
           </h2>
         </div>
 
@@ -98,11 +146,11 @@ export default function InfoModal({ isOpen, onClose, t }) {
         <div className="flex items-center bg-slate-100 p-1 rounded-xl border-2 border-black shadow-[3px_3px_0_#000000] text-xs font-mono font-bold">
           <button
             type="button"
-            onClick={() => handleTabChange('guide')}
+            onClick={() => handleTabChange("guide")}
             className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg border-2 transition-all cursor-pointer ${
-              activeTab === 'guide'
-                ? 'bg-amber-300 text-black border-black shadow-[2px_2px_0_#000000]'
-                : 'border-transparent text-slate-700 hover:text-black hover:bg-slate-200'
+              activeTab === "guide"
+                ? "bg-amber-300 text-black border-black shadow-[2px_2px_0_#000000]"
+                : "border-transparent text-slate-700 hover:text-black hover:bg-slate-200"
             }`}
           >
             <BookOpen className="w-4 h-4" />
@@ -110,11 +158,11 @@ export default function InfoModal({ isOpen, onClose, t }) {
           </button>
           <button
             type="button"
-            onClick={() => handleTabChange('privacy')}
+            onClick={() => handleTabChange("privacy")}
             className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg border-2 transition-all cursor-pointer ${
-              activeTab === 'privacy'
-                ? 'bg-emerald-300 text-black border-black shadow-[2px_2px_0_#000000]'
-                : 'border-transparent text-slate-700 hover:text-black hover:bg-slate-200'
+              activeTab === "privacy"
+                ? "bg-emerald-300 text-black border-black shadow-[2px_2px_0_#000000]"
+                : "border-transparent text-slate-700 hover:text-black hover:bg-slate-200"
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
@@ -124,52 +172,32 @@ export default function InfoModal({ isOpen, onClose, t }) {
 
         {/* Content Area */}
         <div className="min-h-[260px] flex flex-col justify-between">
-          {activeTab === 'guide' ? (
+          {activeTab === "guide" ? (
             <div className="flex flex-col gap-2.5 text-left animate-fadeIn">
               {/* Step 1: Builder */}
-              <div className="bg-slate-50 p-3 sm:p-3.5 rounded-xl border-2 border-black shadow-[3px_3px_0_#000000] flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-emerald-200 text-emerald-950 border-2 border-black shrink-0 mt-0.5">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-mono font-black text-slate-950">
-                    {info.guideStep1Title}
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed font-medium">
-                    {info.guideStep1Desc}
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 2: Free Run */}
-              <div className="bg-slate-50 p-3 sm:p-3.5 rounded-xl border-2 border-black shadow-[3px_3px_0_#000000] flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-sky-200 text-sky-950 border-2 border-black shrink-0 mt-0.5">
-                  <Radio className="w-4 h-4 animate-pulse" />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-mono font-black text-slate-950">
-                    {info.guideStep2Title}
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed font-medium">
-                    {info.guideStep2Desc}
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 3: Share */}
-              <div className="bg-slate-50 p-3 sm:p-3.5 rounded-xl border-2 border-black shadow-[3px_3px_0_#000000] flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-purple-200 text-purple-950 border-2 border-black shrink-0 mt-0.5">
-                  <Share2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-mono font-black text-slate-950">
-                    {info.guideStep3Title}
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed font-medium">
-                    {info.guideStep3Desc}
-                  </p>
-                </div>
-              </div>
+              {info.guideSteps.map((step, i) => {
+                const { Icon, cls } = GUIDE_ICONS[i] || GUIDE_ICONS[0];
+                return (
+                  <div
+                    key={`${i}-${step.title}`}
+                    className="bg-slate-50 p-3 sm:p-3.5 rounded-xl border-2 border-black shadow-[3px_3px_0_#000000] flex items-start gap-3"
+                  >
+                    <div
+                      className={`p-2 rounded-lg border-2 border-black shrink-0 mt-0.5 ${cls}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-mono font-black text-slate-950">
+                        {step.title}
+                      </h3>
+                      <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed font-medium">
+                        {step.desc}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="flex flex-col gap-2.5 text-left animate-fadeIn">
@@ -182,49 +210,29 @@ export default function InfoModal({ isOpen, onClose, t }) {
               </div>
 
               {/* Pillar 1: No server */}
-              <div className="bg-slate-50 p-3 sm:p-3.5 rounded-xl border-2 border-black shadow-[3px_3px_0_#000000] flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-slate-200 text-slate-900 border-2 border-black shrink-0 mt-0.5">
-                  <ServerOff className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-mono font-black text-slate-950">
-                    {info.privacyPoint1Title}
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed font-medium">
-                    {info.privacyPoint1Desc}
-                  </p>
-                </div>
-              </div>
-
-              {/* Pillar 2: Local execution */}
-              <div className="bg-slate-50 p-3 sm:p-3.5 rounded-xl border-2 border-black shadow-[3px_3px_0_#000000] flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-slate-200 text-slate-900 border-2 border-black shrink-0 mt-0.5">
-                  <Cpu className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-mono font-black text-slate-950">
-                    {info.privacyPoint2Title}
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed font-medium">
-                    {info.privacyPoint2Desc}
-                  </p>
-                </div>
-              </div>
-
-              {/* Pillar 3: On-demand GPS */}
-              <div className="bg-slate-50 p-3 sm:p-3.5 rounded-xl border-2 border-black shadow-[3px_3px_0_#000000] flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-slate-200 text-slate-900 border-2 border-black shrink-0 mt-0.5">
-                  <Navigation className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-mono font-black text-slate-950">
-                    {info.privacyPoint3Title}
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed font-medium">
-                    {info.privacyPoint3Desc}
-                  </p>
-                </div>
-              </div>
+              {info.privacyPoints.map((point, i) => {
+                const { Icon, cls } = PRIVACY_ICONS[i] || PRIVACY_ICONS[0];
+                return (
+                  <div
+                    key={`${i}-${point.title}`}
+                    className="bg-slate-50 p-3 sm:p-3.5 rounded-xl border-2 border-black shadow-[3px_3px_0_#000000] flex items-start gap-3"
+                  >
+                    <div
+                      className={`p-2 rounded-lg border-2 border-black shrink-0 mt-0.5 ${cls}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-mono font-black text-slate-950">
+                        {point.title}
+                      </h3>
+                      <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed font-medium">
+                        {point.desc}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

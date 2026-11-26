@@ -23,11 +23,11 @@ export default function Navbar({
   t,
 }) {
   const nav = t?.nav || {
-    builder: "Builder",
-    freeRun: "Free Run",
+    builder: "Buat Rute",
+    freeRun: "Rekam GPS",
     wakeLock: "Layar Aktif",
-    tracking: "Tracking",
-    points: "Pt",
+    tracking: "Pelacakan",
+    points: "titik",
     gps: "GPS",
     standby: "Standby",
     activity: "Aktivitas",

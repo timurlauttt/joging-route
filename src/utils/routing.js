@@ -12,15 +12,16 @@
  * No API keys, no watermarks, no tracking.
  */
 
-const VALHALLA_URL = 'https://valhalla1.openstreetmap.de/route';
-const OSRM_URL = 'https://router.project-osrm.org/route/v1/driving';
+const VALHALLA_URL = "https://valhalla1.openstreetmap.de/route";
+const VALHALLA_LOCATE_URL = "https://valhalla1.openstreetmap.de/locate";
+const OSRM_URL = "https://router.project-osrm.org/route/v1/driving";
 const REQUEST_TIMEOUT_MS = 12000;
 
 /** Map a UI activity to a Valhalla costing model. */
 export const ACTIVITY_COSTING = {
-  run: 'pedestrian',
-  walk: 'pedestrian',
-  ride: 'bicycle',
+  run: "pedestrian",
+  walk: "pedestrian",
+  ride: "bicycle",
 };
 
 /**
@@ -80,7 +81,7 @@ function buildStraightLine(waypoints, error) {
     distance += haversineDistance(waypoints[i], waypoints[i + 1]);
   }
   return {
-    geojson: { type: 'LineString', coordinates: coords },
+    geojson: { type: "LineString", coordinates: coords },
     distance,
     coordinates: coords,
     isSnapped: false,
@@ -88,15 +89,39 @@ function buildStraightLine(waypoints, error) {
   };
 }
 
+/**
+ * Build Valhalla `costing_options` for an activity. For bicycles we honour the
+ * user's ride preferences: avoiding hills lowers `use_hills` (0 = avoid climbs,
+ * 1 = allow), and preferring paved surfaces raises `avoid_bad_surfaces`
+ * (0 = allow everything, 1 = avoid unpaved as much as possible). Ferries are
+ * always disabled.
+ */
+function buildCostingOptions(costing, prefs = null) {
+  const opts = { use_ferry: 0 };
+  if (costing === "bicycle" && prefs) {
+    if (typeof prefs.avoidHills === "boolean") {
+      opts.use_hills = prefs.avoidHills ? 0.15 : 0.5;
+    }
+    if (prefs.surface === "paved") opts.avoid_bad_surfaces = 0.8;
+    else if (prefs.surface === "any") opts.avoid_bad_surfaces = 0;
+    if (prefs.bicycleType) opts.bicycle_type = prefs.bicycleType;
+  }
+  return opts;
+}
+
 /** Valhalla routing with a real pedestrian / bicycle / auto costing model. */
-async function fetchValhallaRoute(waypoints, activity) {
+async function fetchValhallaRoute(waypoints, activity, prefs = null) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
+  const costing = ACTIVITY_COSTING[activity] || "pedestrian";
   const payload = {
     locations: waypoints.map((p) => ({ lat: p.lat, lon: p.lng })),
-    costing: ACTIVITY_COSTING[activity] || 'pedestrian',
-    directions_options: { units: 'kilometers' },
+    costing,
+    // Ferries are almost never what a runner/cyclist wants and they turn an
+    // off-road (e.g. water) waypoint into a nonsensical sea detour.
+    costing_options: { [costing]: buildCostingOptions(costing, prefs) },
+    directions_options: { units: "kilometers" },
   };
 
   const url = `${VALHALLA_URL}?json=${encodeURIComponent(JSON.stringify(payload))}`;
@@ -108,17 +133,18 @@ async function fetchValhallaRoute(waypoints, activity) {
     const data = await response.json();
     const trip = data?.trip;
     if (!trip || !Array.isArray(trip.legs) || trip.legs.length === 0) {
-      throw new Error(data?.error || 'Valhalla returned no route');
+      throw new Error(data?.error || "Valhalla returned no route");
     }
 
     const coordinates = [];
     for (const leg of trip.legs) {
       if (leg.shape) appendUnique(coordinates, decodePolyline(leg.shape, 6));
     }
-    if (coordinates.length < 2) throw new Error('Valhalla route geometry was empty');
+    if (coordinates.length < 2)
+      throw new Error("Valhalla route geometry was empty");
 
     return {
-      geojson: { type: 'LineString', coordinates },
+      geojson: { type: "LineString", coordinates },
       distance: (trip.summary?.length || 0) * 1000, // km -> meters
       coordinates,
       isSnapped: true,
@@ -135,7 +161,7 @@ async function fetchOsrmRoute(waypoints) {
 
   const coordsQuery = waypoints
     .map((p) => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`)
-    .join(';');
+    .join(";");
   const url = `${OSRM_URL}/${coordsQuery}?overview=full&geometries=geojson`;
 
   try {
@@ -143,8 +169,8 @@ async function fetchOsrmRoute(waypoints) {
     if (!response.ok) throw new Error(`OSRM HTTP ${response.status}`);
 
     const data = await response.json();
-    if (data.code !== 'Ok' || !data.routes?.length) {
-      throw new Error(data.message || 'OSRM returned no route');
+    if (data.code !== "Ok" || !data.routes?.length) {
+      throw new Error(data.message || "OSRM returned no route");
     }
 
     const best = data.routes[0];
@@ -163,23 +189,30 @@ async function fetchOsrmRoute(waypoints) {
  * Fetch a road-snapped route for the given activity.
  * @param {Array<{lat: number, lng: number}>} waypoints
  * @param {'run'|'walk'|'ride'} activity
+ * @param {{avoidHills?: boolean, surface?: 'any'|'paved', bicycleType?: string}} [prefs]
  * @returns {Promise<{geojson: any, distance: number, coordinates: [number, number][], isSnapped: boolean, error?: string}>}
  */
-export async function fetchRoute(waypoints, activity = 'run') {
+export async function fetchRoute(waypoints, activity = "run", prefs = null) {
   if (!waypoints || waypoints.length < 2) {
     return { geojson: null, distance: 0, coordinates: [], isSnapped: false };
   }
 
   try {
-    return await fetchValhallaRoute(waypoints, activity);
+    return await fetchValhallaRoute(waypoints, activity, prefs);
   } catch (err) {
-    console.warn('Valhalla routing unavailable, trying OSRM fallback:', err.message);
+    console.warn(
+      "Valhalla routing unavailable, trying OSRM fallback:",
+      err.message,
+    );
   }
 
   try {
     return await fetchOsrmRoute(waypoints);
   } catch (err) {
-    console.warn('OSRM routing unavailable, drawing straight connection:', err.message);
+    console.warn(
+      "OSRM routing unavailable, drawing straight connection:",
+      err.message,
+    );
     return buildStraightLine(waypoints, err.message);
   }
 }
@@ -199,4 +232,43 @@ export function haversineDistance(p1, p2) {
       Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+}
+
+/**
+ * Snap locations onto the nearest road using Valhalla's `/locate` action.
+ * Returns one `{ lat, lng }` per input (or `null` when no edge was found),
+ * preserving order. The auto-route generator uses this so planned waypoints
+ * never sit in water or off the network.
+ */
+export async function snapLocations(locations, activity = "run") {
+  if (!locations || locations.length === 0) return [];
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const payload = {
+    locations: locations.map((p) => ({ lat: p.lat, lon: p.lng })),
+    costing: ACTIVITY_COSTING[activity] || "pedestrian",
+  };
+  const url = `${VALHALLA_LOCATE_URL}?json=${encodeURIComponent(JSON.stringify(payload))}`;
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok)
+      throw new Error(`Valhalla locate HTTP ${response.status}`);
+
+    const data = await response.json();
+    if (!Array.isArray(data))
+      throw new Error("Valhalla locate returned no data");
+
+    return data.map((entry) => {
+      const edge = entry?.edges?.[0];
+      if (!edge || typeof edge.correlated_lat !== "number") return null;
+      return { lat: edge.correlated_lat, lng: edge.correlated_lon };
+    });
+  } catch (err) {
+    console.warn("Valhalla locate unavailable:", err.message);
+    return locations.map(() => null);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }

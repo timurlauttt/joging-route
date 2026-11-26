@@ -10,9 +10,9 @@ import Navbar from "./components/Navbar";
 import MapRoute from "./components/MapRoute";
 import MetricCards from "./components/MetricCards";
 import ControlsBar from "./components/ControlsBar";
-import { fetchRoute, haversineDistance } from "./utils/routing";
+import { fetchRoute, haversineDistance, snapLocations } from "./utils/routing";
 import { calculatePace } from "./utils/formatters";
-import { generateRouteByDistance, getCurrentPosition } from "./utils/autoRoute";
+import { generateRouteOptions, getCurrentPosition } from "./utils/autoRoute";
 
 const ShareModal = lazy(() => import("./components/ShareModal"));
 const InfoModal = lazy(() => import("./components/InfoModal"));
@@ -97,6 +97,47 @@ export default function App() {
 
   // Auto Route (distance-based route generation) modal state
   const [isAutoRouteOpen, setIsAutoRouteOpen] = useState(false);
+
+  // Marks the waypoints most recently produced by Auto Route so the route
+  // effect can keep the finished, branch-free loop instead of re-routing them.
+  const autoRouteRef = useRef(null);
+
+  // Ride preferences (persisted): avoid hills lowers Valhalla's `use_hills`, and
+  // preferring paved surfaces raises `avoid_bad_surfaces`. Only used for rides.
+  const [bikePrefs, setBikePrefs] = useState(() => {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem("ontrack_bike_prefs") || "null",
+      );
+      if (saved && typeof saved === "object") return saved;
+    } catch {
+      // Ignore malformed storage
+    }
+    return { avoidHills: false, surface: "any" };
+  });
+
+  const handleBikePrefsChange = useCallback((next) => {
+    setBikePrefs(next);
+    // Changing ride preferences should take effect on the current route, so drop
+    // the auto-route lock and let the route effect recompute.
+    autoRouteRef.current = null;
+    try {
+      localStorage.setItem("ontrack_bike_prefs", JSON.stringify(next));
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, []);
+
+  // Optional "must pass through" point for Auto Route (e.g. a city square).
+  const [viaPoint, setViaPoint] = useState(null);
+
+  const handleSetVia = useCallback((point) => {
+    setViaPoint(point);
+  }, []);
+
+  const handleClearVia = useCallback(() => {
+    setViaPoint(null);
+  }, []);
 
   // Voice Audio Cues state (persisted in localStorage)
   const [isVoiceCueEnabled, setIsVoiceCueEnabled] = useState(() => {
@@ -351,6 +392,15 @@ export default function App() {
   useEffect(() => {
     if (mode !== "builder") return;
 
+    // Auto Route already produced a finished, branch-free loop for these exact
+    // waypoints; keep that geometry instead of re-routing it (a fresh route can
+    // distort the loop or exceed the router's per-request location limit).
+    const lock = autoRouteRef.current;
+    if (lock && lock.waypoints === waypoints && lock.activity === activity) {
+      return;
+    }
+    autoRouteRef.current = null;
+
     let isMounted = true;
 
     if (waypoints.length < 2) {
@@ -372,7 +422,7 @@ export default function App() {
       if (!isMounted) return;
       setIsLoadingRoute(true);
       try {
-        const result = await fetchRoute(waypoints, activity);
+        const result = await fetchRoute(waypoints, activity, bikePrefs);
         if (isMounted) {
           setRouteGeojson(result.geojson);
           setDistanceMeters(result.distance);
@@ -406,12 +456,34 @@ export default function App() {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [waypoints, mode, activity]);
+  }, [waypoints, mode, activity, bikePrefs]);
 
   // Waypoint manipulation handlers (Route Builder)
   const handleAddWaypoint = useCallback((newPt) => {
     setWaypoints((prev) => [...prev, newPt]);
   }, []);
+
+  // Drag-to-move: snap the dropped waypoint back onto the nearest road, then
+  // update state so the route effect recomputes through it.
+  const handleMoveWaypoint = useCallback(
+    async (index, pt) => {
+      let target = pt;
+      try {
+        const snapped = await snapLocations([pt], activity);
+        if (snapped && snapped[0]) target = snapped[0];
+      } catch {
+        // Keep the raw position if snapping fails
+      }
+      // A moved waypoint invalidates any finished Auto Route loop.
+      autoRouteRef.current = null;
+      setWaypoints((prev) =>
+        prev.map((p, i) =>
+          i === index ? { lat: target.lat, lng: target.lng } : p,
+        ),
+      );
+    },
+    [activity],
+  );
 
   const handleUndoWaypoint = useCallback(() => {
     setWaypoints((prev) => {
@@ -430,6 +502,7 @@ export default function App() {
     lastSplitTimeRef.current = 0;
     liveDistanceMetersRef.current = 0;
     setElevationData(null);
+    setViaPoint(null);
     if (mode === "builder") {
       setWaypoints([]);
       setRouteGeojson(null);
@@ -440,32 +513,61 @@ export default function App() {
     }
   }, [mode]);
 
-  // Auto Route: build a road-snapped loop of a chosen distance from the start
-  // point (first waypoint, or the user's current location).
-  const handleAutoRoute = useCallback(
-    async (targetMeters, onProgress) => {
+  // Auto Route: build road-snapped loop OPTIONS of a chosen distance from the
+  // start point (first waypoint, or the user's current location). Generation is
+  // pure — nothing hits the map until the user picks an option to apply.
+  const handleGenerateOptions = useCallback(
+    async (targetMeters, onProgress, options) => {
       const start =
         waypoints.length > 0
           ? { lat: waypoints[0].lat, lng: waypoints[0].lng }
           : await getCurrentPosition();
 
-      const result = await generateRouteByDistance(
-        start,
-        targetMeters,
-        activity,
-        onProgress,
-      );
+      return generateRouteOptions(start, targetMeters, activity, onProgress, {
+        ...options,
+        prefs: bikePrefs,
+        via: viaPoint,
+      });
+    },
+    [waypoints, activity, bikePrefs, viaPoint],
+  );
+
+  // Apply a chosen auto-route option to the map (and fetch its ride elevation).
+  const handleApplyRouteOption = useCallback(
+    async (option) => {
+      if (!option?.route) return;
 
       setSplits([]);
       lastSplitKmRef.current = 0;
       lastSplitTimeRef.current = 0;
       liveDistanceMetersRef.current = 0;
       setElevationData(null);
-      setWaypoints(result.waypoints.map((p) => ({ lat: p.lat, lng: p.lng })));
 
-      return result.distance;
+      const generated = option.waypoints.map((p) => ({
+        lat: p.lat,
+        lng: p.lng,
+      }));
+
+      // Hand the finished loop straight to the map and flag these waypoints so
+      // the route effect keeps this clean geometry (see the lock above).
+      autoRouteRef.current = { waypoints: generated, activity };
+      setWaypoints(generated);
+      setRouteGeojson(option.route?.geojson ?? null);
+      setDistanceMeters(option.distance ?? 0);
+
+      // Elevation profile for rides (Strava-style climb data).
+      if (activity === "ride" && option.route?.coordinates?.length >= 2) {
+        try {
+          const elevation = await fetchElevationProfile(
+            option.route.coordinates,
+          );
+          setElevationData(elevation);
+        } catch (elevErr) {
+          console.warn("Elevation fetch failed:", elevErr.message);
+        }
+      }
     },
-    [waypoints, activity],
+    [activity],
   );
 
   const handleModeChange = useCallback(
@@ -571,6 +673,12 @@ export default function App() {
             isLoadingRoute={isLoadingRoute}
             elevationData={elevationData}
             onAddWaypoint={handleAddWaypoint}
+            onMoveWaypoint={handleMoveWaypoint}
+            bikePrefs={bikePrefs}
+            onChangeBikePrefs={handleBikePrefsChange}
+            viaPoint={viaPoint}
+            onSetVia={handleSetVia}
+            onClearVia={handleClearVia}
             t={t}
           />
         </div>
@@ -660,7 +768,8 @@ export default function App() {
             activity={activity}
             hasWaypoints={waypoints.length > 0}
             t={t}
-            onGenerate={handleAutoRoute}
+            onGenerate={handleGenerateOptions}
+            onApply={handleApplyRouteOption}
           />
         )}
       </Suspense>

@@ -141,6 +141,12 @@ export default function MapRoute({
   isLoadingRoute = false,
   elevationData = null,
   onAddWaypoint,
+  onMoveWaypoint,
+  bikePrefs = null,
+  onChangeBikePrefs,
+  viaPoint = null,
+  onSetVia,
+  onClearVia,
   t,
 }) {
   const m = useMemo(
@@ -163,7 +169,7 @@ export default function MapRoute({
         layerDark: "Ganti ke Mode Gelap",
         startMarker: "Titik Awal (Start)",
         finishMarker: "Titik Akhir (Finish)",
-        waypoint: "Waypoint",
+        waypoint: "Titik",
         myLocation: "Lokasi Anda",
         layersTitle: "Lapisan Peta",
         baseRoad: "Peta Jalan",
@@ -193,6 +199,25 @@ export default function MapRoute({
         catHealth: "Kesehatan",
         catSport: "Olahraga & Taman",
         catAttraction: "Wisata & Landmark",
+        bikePrefsTitle: "Preferensi Sepeda",
+        avoidHills: "Hindari tanjakan",
+        avoidHillsHint: "Utamakan jalan datar",
+        surfaceLabel: "Permukaan",
+        surfaceAny: "Bebas",
+        surfacePaved: "Aspal",
+        viaTitle: "Lewat titik ini",
+        viaSet: "Lewat sini",
+        viaClear: "Hapus via",
+        viaActive: "Loop akan lewat titik ini",
+        dragHint:
+          "Geser penanda untuk memindah titik — otomatis menempel ke jalan",
+        windowTitle: "Peta Rute OnTrack",
+        modeRoadRun: "Rute Jalan",
+        modeBikeRoute: "Rute Sepeda",
+        modeLiveGps: "GPS Langsung",
+        modeLiveRide: "Sepeda Langsung",
+        pointsUnit: "titik",
+        gpsPointsUnit: "titik GPS",
       },
     [t],
   );
@@ -205,12 +230,14 @@ export default function MapRoute({
   const liveMarkerLayerRef = useRef(null);
   const userLocLayerRef = useRef(null);
   const poiLayerRef = useRef(null);
+  const viaLayerRef = useRef(null);
   const layersWrapRef = useRef(null);
   const poiAbortRef = useRef(null);
   const poiDebounceRef = useRef(null);
 
   const [manualBase, setManualBase] = useState(null);
   const [isLayersOpen, setIsLayersOpen] = useState(false);
+  const [isBikePrefsOpen, setIsBikePrefsOpen] = useState(false);
   const [showPOI, setShowPOI] = useState(false);
   const [activePoiCats, setActivePoiCats] = useState(() =>
     POI_CATEGORIES.map((c) => c.id),
@@ -296,6 +323,7 @@ export default function MapRoute({
     liveMarkerLayerRef.current = L.layerGroup().addTo(map);
     userLocLayerRef.current = L.layerGroup().addTo(map);
     poiLayerRef.current = L.layerGroup().addTo(map);
+    viaLayerRef.current = L.layerGroup().addTo(map);
 
     map.on("click", (e) => {
       if (modeRef.current === "builder") {
@@ -444,13 +472,30 @@ export default function MapRoute({
         });
         const marker = L.marker([poi.lat, poi.lon], { icon, title: label });
         marker.bindPopup(
-          `<div class="text-xs text-zinc-900 font-sans py-0.5"><b>${escapeHtml(label)}</b><div class="text-[10px] text-zinc-500">${cat.emoji} ${escapeHtml(
+          `<div class="text-xs text-zinc-900 font-sans py-0.5"><b>${escapeHtml(label)}</b><div class="text-[10px] text-slate-500">${cat.emoji} ${escapeHtml(
             m[cat.labelKey] || "",
-          )}</div></div>`,
+          )}</div>${
+            mode === "builder"
+              ? `<button type="button" class="poi-via-btn mt-1 w-full px-2 py-1 rounded border-2 border-black bg-amber-300 font-black text-[10px] shadow-[2px_2px_0_#000] cursor-pointer">★ ${escapeHtml(
+                  m.viaSet,
+                )}</button>`
+              : ""
+          }</div>`,
         );
+        marker.on("popupopen", (e) => {
+          const btn = e.popup.getElement()?.querySelector(".poi-via-btn");
+          if (btn && onSetVia) {
+            btn.onclick = (ev) => {
+              ev.preventDefault();
+              playTactileSound("action");
+              onSetVia({ lat: poi.lat, lng: poi.lon, name: poi.name });
+              marker.closePopup();
+            };
+          }
+        });
         poiLayerRef.current.addLayer(marker);
       });
-  }, [pois, activePoiCats, showPOI, m]);
+  }, [pois, activePoiCats, showPOI, m, mode, onSetVia]);
 
   // Route Builder: Update Waypoints Markers
   useEffect(() => {
@@ -485,15 +530,47 @@ export default function MapRoute({
         iconAnchor: [13, 13],
       });
 
-      const marker = L.marker([pt.lat, pt.lng], { icon });
+      const marker = L.marker([pt.lat, pt.lng], { icon, draggable: true });
+      marker.on("dragend", (e) => {
+        const ll = e.target.getLatLng();
+        playTactileSound("action");
+        onMoveWaypoint?.(index, { lat: ll.lat, lng: ll.lng });
+      });
       marker.bindPopup(
         `<div class="text-xs text-zinc-900 font-sans py-0.5">
           <b>${isStart ? m.startMarker : isEnd ? m.finishMarker : `${m.waypoint} #${index + 1}`}</b>
+          <div class="text-[10px] text-slate-500">${m.dragHint}</div>
         </div>`,
       );
       markersLayerRef.current.addLayer(marker);
     });
-  }, [waypoints, mode, m]);
+  }, [waypoints, mode, m, onMoveWaypoint]);
+
+  // Route Builder: render the optional "must pass through" via-point marker.
+  useEffect(() => {
+    if (!viaLayerRef.current) return;
+    viaLayerRef.current.clearLayers();
+    if (mode !== "builder" || !viaPoint) return;
+
+    const viaIcon = L.divIcon({
+      className: "custom-pin-wrapper",
+      html: `<div style="width:28px;height:28px;border-radius:9999px;background:#f59e0b;border:2px solid #000;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;box-shadow:2px 2px 0 #000">★</div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+    const marker = L.marker([viaPoint.lat, viaPoint.lng], {
+      icon: viaIcon,
+      zIndexOffset: 600,
+    });
+    marker.bindPopup(
+      `<div class="text-xs text-zinc-900 font-sans py-0.5"><b>${escapeHtml(
+        viaPoint.name || m.viaTitle,
+      )}</b><div class="text-[10px] text-slate-500">${escapeHtml(
+        m.viaActive,
+      )}</div></div>`,
+    );
+    viaLayerRef.current.addLayer(marker);
+  }, [viaPoint, mode, m]);
 
   // Route Builder: Render clean solid route polyline
   useEffect(() => {
@@ -662,11 +739,11 @@ export default function MapRoute({
   const modeBadge =
     mode === "builder"
       ? activity === "ride"
-        ? "MODE: BIKE_ROUTE"
-        : "MODE: ROAD_SNAP"
+        ? m.modeBikeRoute
+        : m.modeRoadRun
       : activity === "ride"
-        ? "MODE: LIVE_RIDE"
-        : "MODE: LIVE_GPS";
+        ? m.modeLiveRide
+        : m.modeLiveGps;
 
   const visiblePoiCount = activePoiCats.length
     ? pois.reduce((n, p) => (activePoiCats.includes(p.category) ? n + 1 : n), 0)
@@ -696,8 +773,7 @@ export default function MapRoute({
           <div className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-black shadow-sm" />
           <div className="w-3 h-3 rounded-full bg-[#27c93f] border border-black shadow-sm" />
           <span className="ml-2 font-mono text-slate-900 text-xs font-black tracking-wide flex items-center gap-1.5">
-            <span className="text-sky-700 font-bold">~/ontrack</span>
-            /route-canvas.ts
+            <span className="text-sky-700 font-bold">{m.windowTitle}</span>
           </span>
         </div>
         <div className="flex items-center gap-2 font-mono text-[10px]">
@@ -826,6 +902,38 @@ export default function MapRoute({
               className={`w-4 h-4 ${isLocating ? "animate-spin text-orange-600" : "text-sky-700"}`}
             />
           </button>
+
+          {mode === "builder" && activity === "ride" && (
+            <button
+              type="button"
+              onClick={() => {
+                playTactileSound("click");
+                setIsBikePrefsOpen((v) => !v);
+              }}
+              title={m.bikePrefsTitle}
+              className={`p-2 rounded-lg border-2 border-black shadow-[3px_3px_0_#000000] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center justify-center cursor-pointer ${
+                isBikePrefsOpen
+                  ? "bg-orange-300"
+                  : "bg-white hover:bg-slate-100"
+              }`}
+            >
+              <Mountain className="w-4 h-4 text-orange-700" />
+            </button>
+          )}
+
+          {mode === "builder" && viaPoint && (
+            <button
+              type="button"
+              onClick={() => {
+                playTactileSound("click");
+                onClearVia?.();
+              }}
+              title={m.viaClear}
+              className="p-2 rounded-lg border-2 border-black bg-amber-300 shadow-[3px_3px_0_#000000] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center justify-center cursor-pointer"
+            >
+              <span className="text-sm leading-none font-black">★</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -987,6 +1095,96 @@ export default function MapRoute({
               )}
             </div>
           )}
+
+          {/* Bike Preferences Popover (rides only) */}
+          {isBikePrefsOpen && mode === "builder" && activity === "ride" && (
+            <div className="w-[min(17rem,calc(100vw-1.5rem))] bg-white border-2 border-black rounded-xl shadow-[4px_4px_0_#000000] p-3 text-left">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-mono font-black text-xs text-slate-900 flex items-center gap-1.5">
+                  <Mountain className="w-3.5 h-3.5 text-orange-700" />
+                  {m.bikePrefsTitle}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTactileSound("click");
+                    setIsBikePrefsOpen(false);
+                  }}
+                  aria-label="Tutup"
+                  className="p-1 text-slate-600 hover:text-black rounded border border-black hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+
+              {/* Avoid hills */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex flex-col min-w-0">
+                  <span className="font-mono font-bold text-[11px] text-slate-800">
+                    {m.avoidHills}
+                  </span>
+                  <span className="text-[9px] font-mono text-slate-500">
+                    {m.avoidHillsHint}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={!!bikePrefs?.avoidHills}
+                  onClick={() => {
+                    playTactileSound("switch");
+                    onChangeBikePrefs?.({
+                      ...bikePrefs,
+                      avoidHills: !bikePrefs?.avoidHills,
+                    });
+                  }}
+                  className={`relative w-10 h-5 rounded-full border-2 border-black transition-colors cursor-pointer shrink-0 ${
+                    bikePrefs?.avoidHills ? "bg-orange-400" : "bg-slate-300"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 w-3.5 h-3.5 bg-white border border-black rounded-full transition-all ${
+                      bikePrefs?.avoidHills ? "left-[18px]" : "left-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="border-t-2 border-slate-200 my-2.5" />
+
+              {/* Surface preference */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono font-bold text-[11px] text-slate-800">
+                  {m.surfaceLabel}
+                </span>
+                <div className="flex gap-1">
+                  {[
+                    { id: "any", label: m.surfaceAny },
+                    { id: "paved", label: m.surfacePaved },
+                  ].map((s) => {
+                    const active = (bikePrefs?.surface || "any") === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          playTactileSound("click");
+                          onChangeBikePrefs?.({ ...bikePrefs, surface: s.id });
+                        }}
+                        className={`px-2 py-1 rounded-md border-2 text-[10px] font-mono font-black transition-all cursor-pointer ${
+                          active
+                            ? "bg-orange-200 border-black shadow-[2px_2px_0_#000000]"
+                            : "bg-white border-slate-300 text-slate-600 hover:border-black"
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Elevation Profile (rides only) */}
@@ -1055,8 +1253,8 @@ export default function MapRoute({
           )}
           <span>
             {mode === "freerun"
-              ? `${liveCoordinates.length} GPS pts`
-              : `${waypoints.length} pt`}
+              ? `${liveCoordinates.length} ${m.gpsPointsUnit}`
+              : `${waypoints.length} ${m.pointsUnit}`}
           </span>
           {showPOI && visiblePoiCount > 0 && (
             <>

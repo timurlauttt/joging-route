@@ -75,6 +75,7 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 
 - **Real-Time Lap Splits Table**: Logs granular lap times and calculates per-kilometer **pace** for runs and per-kilometer **speed** for rides throughout outdoor sessions.
 - **Embedded Splits on Exported Card**: Splits are integrated directly onto the Strava-style 4:5 and 9:16 Instagram cards with an on/off toggle, allowing athletes to showcase their pacing strategy and negative splits alongside their route silhouette.
+- **GPX Track Export**: download the planned route as a standard **GPX 1.1** file — with `<ele>` elevation tags when a ride elevation profile is available — for import into Strava, Komoot, Garmin, or any other GPS app.
 
 ### 10. 🌐 Instant Reactive Localization (ID / EN)
 
@@ -84,7 +85,7 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 ### 11. 🚴 Dual-Activity Engine (Run & Ride)
 
 - A single **Run / Ride** switch (persisted in `localStorage`) re-wires the whole app Strava-style: it swaps the routing profile (Valhalla `pedestrian` ↔ `bicycle`), the metric card (average **pace** ↔ average **speed** in km/h), the calorie model (62 ↔ 30 kcal/km), the live GPS track and route colours, the voice-cue language, the share-card labels, and auto-selects the **CyclOSM** basemap for rides.
-- **Elevation profile (rides)**: queries the keyless **Open-Meteo Elevation API** (Copernicus DEM) for the planned route and draws a live climb profile on the map with total ascent/descent, an **Elevation Gain** metric card, and an **ELEVATION** stat on the exported share card.
+- **Elevation profile (rides)**: samples the keyless, CORS-enabled **AWS Terrain Tiles (Terrarium)** ~30 m DEM — decoded from PNG tiles right in the browser for a fine climb profile — with the **Open-Meteo (Copernicus GLO-90)** API as an automatic fallback, then draws a live climb profile with total ascent/descent, an **Elevation Gain** metric card, and an **ELEVATION** stat on the exported share card.
 
 ### 12. 🏨 Nearby Strategic Places (POI)
 
@@ -94,7 +95,19 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 ### 13. 🧭 Auto-Route by Target Distance
 
 - **One-tap loop generation**: pick a distance template (**3, 5, 10, 15, 20, 25, 30, 35, 50 km**) or type a custom value, and OnTrack builds a road-snapped **loop route** from your start point (the first waypoint, or your live GPS location) — for either running or cycling.
+- **Road-snapped waypoints**: every generated waypoint is snapped onto the real road network via Valhalla's `/locate` action before routing, so a "stop point" never lands in water or off-road; spokes that run into water are automatically pulled inward, and ferries are excluded from routing.
+- **Genuine closed loop**: the start sits _on_ the loop's perimeter (never a hub in the centre), and after routing any out-and-back **branch** is pruned from the geometry and the control points are resampled along the cleaned loop — so no dead-end spur ever pokes out and every marker sits on the route.
 - **Convergent radius solver**: the keyless router is queried iteratively, rescaling the loop radius each pass (starting from $R = \text{target} / 2\pi$) until the routed distance lands within ±6% of the requested target. No server-side generation, no API keys.
+- **8-direction compass + Auto**: bias the loop toward a chosen heading (N, NE, E, SE, S, SW, W, NW) or let **Auto** pick the most road-friendly direction. A forced heading that points into open water or off-road is **rejected outright** (`DIRECTION_OFFROAD`) instead of producing a useless loop.
+- **Three loop options + regenerate**: each generation returns up to **3 distinct near-target loops** with a recommended **Best** pick; **Regenerate** re-jitters the radius grid and (in Auto) nudges the probe angle to explore a genuinely different direction.
+- **Per-route estimates**: every option and the active route show an **estimated time** (activity-specific pace) and **estimated calories**, so you can compare before committing.
+- **Via-point (“Lewat titik X”)**: enable the Strategic Places overlay, open any POI (e.g. a city square) and tap **“Lewat sini”** — the generated loop is then aimed at and routed **through** that point, so you can guarantee a ride passes your favourite landmark before returning home.
+
+### 14. 🚵 Ride Preferences & Drag-to-Move
+
+- **Avoid hills (bike)**: a toggle lowers Valhalla's bicycle `use_hills` cost so loops prefer flat roads — ideal for casual or recovery rides.
+- **Surface preference (bike)**: choose **Any** or **Paved** to raise `avoid_bad_surfaces`, steering rides away from gravel and rough tracks without needing a routing server.
+- **Drag-to-move waypoints**: drag any marker on the map and the point is instantly re-snapped to the nearest road via Valhalla `/locate`, then the route recomputes — no manual re-tapping required.
 
 ---
 
@@ -110,13 +123,18 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 | **Road Route Builder**             |        Paid Subscription        |                     **Free & Open Source**                      |
 | **Auto-Route by Distance**         |       Paid / Manual Only        |                **Free One-Tap Loop Generation**                 |
 | **Cycling Mode**                   |        Subscription Tier        |                 **Built-in Run / Ride Switch**                  |
-| **Elevation Profile (Rides)**      |        Subscription Tier        |             **Free Keyless DEM Climb Data & Chart**             |
+| **Elevation Profile (Rides)**      |        Subscription Tier        |              **Free Keyless 30 m DEM Climb Data**               |
 | **Nearby Places (Hotels, etc.)**   |         Paid Spotlight          |                  **Free Keyless POI Overlay**                   |
 | **Basemap Choice**                 |         Locked Provider         | **Street / OSM / CyclOSM / Satellite / Terrain / Light / Dark** |
 | **Screen-Off Background Tracking** |       Native App Service        |               **Audio Keep-Alive + MediaSession**               |
 | **Stopwatch Accuracy**             |         Native OS Timer         |               **Drift-Free Timestamp Delta Math**               |
 | **Screen Wake Lock**               |         Native App Only         |                 **Native Web API (In-Browser)**                 |
 | **Social Card Export**             |        Fixed Watermarks         |              **Custom 4:5 & 9:16 Aesthetic Cards**              |
+| **GPX Track Export**               |        Locked / Limited         |               **Free One-Click GPX 1.1 Download**               |
+| **Auto-Route Direction Control**   |       Manual Only / Paid        |               **Free 8-Direction Compass + Auto**               |
+| **Route Via-Point**                |       Paid / Manual Only        |               **Free "Pass Through This Place"**                |
+| **Avoid Hills / Surface (Bike)**   |        Subscription Tier        |           **Free `use_hills` & `avoid_bad_surfaces`**           |
+| **Drag-to-Move Waypoints**         |         Paid / Limited          |              **Free Instant Road Re-Snap on Drag**              |
 | **API Keys Needed**                |            High Cost            |                  **Keyless Free Architecture**                  |
 
 ---
@@ -125,7 +143,7 @@ Most modern running trackers (Strava, Nike Run Club, etc.) require mandatory acc
 
 - **Core Framework**: [React 19](https://react.dev/) + [Vite 6](https://vitejs.dev/)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) (Custom neobrutalist light palette, matte surfaces, hard-shadow accents)
-- **Map & Spatial Routing**: [Leaflet.js](https://leafletjs.com/), [Valhalla Public OSM Router](https://valhalla1.openstreetmap.de/) (pedestrian & bicycle profiles), [OSRM](http://project-osrm.org/) (car fallback), [OpenStreetMap Overpass API](https://overpass-api.de/) (nearby places), [Open-Meteo Elevation API](https://open-meteo.com/) (keyless DEM elevation), [Esri World Street Map](https://server.arcgisonline.com) & [CyclOSM](https://www.cyclosm.org/) tiles
+- **Map & Spatial Routing**: [Leaflet.js](https://leafletjs.com/), [Valhalla Public OSM Router](https://valhalla1.openstreetmap.de/) (pedestrian & bicycle profiles + `/locate` road snapping), [OSRM](http://project-osrm.org/) (car fallback), [OpenStreetMap Overpass API](https://overpass-api.de/) (nearby places), [AWS Terrain Tiles / Terrarium](https://registry.opendata.aws/terrain-tiles/) (~30 m keyless DEM) with [Open-Meteo](https://open-meteo.com/) (Copernicus GLO-90) fallback, [Esri World Street Map](https://server.arcgisonline.com) & [CyclOSM](https://www.cyclosm.org/) tiles
 - **PWA & Device APIs**: Service Worker, Screen Wake Lock, Web Speech API, MediaSession API, Web Share API
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **Image Generation**: [html-to-image](https://github.com/bubkoo/html-to-image)
@@ -154,7 +172,7 @@ jog-route/
 │   │   ├── audioCues.js         # Web Speech API synthesized pace/speed announcement engine
 │   │   ├── autoRoute.js         # Distance-based loop route generation (geodesic loop + convergent solver)
 │   │   ├── backgroundAudio.js   # Silent audio loop keep-alive & MediaSession worker
-│   │   ├── elevation.js         # Open-Meteo keyless elevation profile & gain/loss engine
+│   │   ├── elevation.js         # ~30 m Terrarium DEM tiles (GLO-90 fallback) + gain/loss engine
 │   │   ├── formatters.js        # Distance, Pace, Speed, Time & Calorie calculation helpers
 │   │   ├── pois.js              # Overpass API nearby strategic-places (POI) engine
 │   │   ├── routing.js           # Valhalla pedestrian/bicycle routing, OSRM fallback & Haversine formula

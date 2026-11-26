@@ -9,7 +9,7 @@ import {
   Bike,
   Volume2,
   VolumeX,
-  Wand2,
+  Route,
 } from "lucide-react";
 import { playTactileSound } from "../utils/soundEffects";
 
@@ -74,7 +74,7 @@ export default function ControlsBar({
               title={c.autoRouteTitle}
               className="p-1.5 sm:px-3 sm:py-2 text-xs font-mono font-black rounded-lg bg-violet-300 hover:bg-violet-200 text-black border-2 border-black shadow-[3px_3px_0_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer flex items-center gap-1.5"
             >
-              <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Route className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{c.autoRoute}</span>
             </button>
 
